@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>學齡前小遊戲</title>
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="mobile-web-app-capable" content="yes" />
+<meta name="theme-color" content="#FDEFD9" />
+<style>html, body { margin:0; padding:0; background:#FDEFD9; }</style>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useMemo, useRef } = React;
+
+const POS = [
+  { top: 20, left: 14 }, { top: 16, left: 50 }, { top: 22, left: 86 },
+  { top: 50, left: 10 }, { top: 46, left: 35 }, { top: 48, left: 65 },
+  { top: 52, left: 90 }, { top: 80, left: 20 }, { top: 78, left: 50 },
+  { top: 82, left: 80 },
+];
+
+const COLORS = [
+  { id: "red", label: "紅色", hex: "#E9636B" },
+  { id: "orange", label: "橘色", hex: "#F2A65A" },
+  { id: "yellow", label: "黃色", hex: "#F2C94C" },
+  { id: "green", label: "綠色", hex: "#6FB07F" },
+  { id: "blue", label: "藍色", hex: "#4FA3D1" },
+  { id: "purple", label: "紫色", hex: "#9B8FD9" },
+  { id: "pink", label: "粉紅色", hex: "#E993C2" },
+  { id: "brown", label: "咖啡色", hex: "#B77A4A" },
+];
+
+const SHAPES = [
+  { id: "circle", label: "圓形", hex: "#F2A65A", clip: "circle(50% at 50% 50%)" },
+  { id: "square", label: "方形", hex: "#4FA3D1", clip: "none", radius: 14 },
+  { id: "triangle", label: "三角形", hex: "#6FB07F", clip: "polygon(50% 4%, 4% 96%, 96% 96%)" },
+  { id: "star", label: "星星", hex: "#F2C94C", clip: "polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%)" },
+  { id: "diamond", label: "鑽石", hex: "#9B8FD9", clip: "polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%)" },
+  { id: "heart", label: "愛心", hex: "#E9636B", emoji: "❤️" },
+];
+
+const NUMBERS = Array.from({ length: 10 }, (_, i) => {
+  const n = i + 1;
+  const palette = ["#E9636B", "#F2A65A", "#F2C94C", "#6FB07F", "#4FA3D1", "#9B8FD9", "#E993C2", "#B77A4A", "#5FA86A", "#D98A4E"];
+  return { id: "n" + n, label: String(n), hex: palette[i] };
+});
+
+const COUNT_EMOJI = ["🍎", "🍓", "🎈", "⭐", "🐻"];
+
+function speak(text, rate = 0.65) {
+  try {
+    if (!window.speechSynthesis) return;
+    window.speechSynthesis.cancel();
+    const u = new SpeechSynthesisUtterance(text);
+    u.lang = "zh-TW"; u.rate = rate; u.pitch = 1.15;
+    window.speechSynthesis.speak(u);
+  } catch (e) {}
+}
+function speakMany(texts, rate = 0.65) {
+  try {
+    if (!window.speechSynthesis) return;
+    window.speechSynthesis.cancel();
+    texts.forEach((t) => {
+      const u = new SpeechSynthesisUtterance(t);
+      u.lang = "zh-TW"; u.rate = rate; u.pitch = 1.15;
+      window.speechSynthesis.speak(u);
+    });
+  } catch (e) {}
+}
+function playApplause() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const now = ctx.currentTime;
+    for (let i = 0; i < 6; i++) {
+      const t = now + i * 0.09 + Math.random() * 0.04;
+      const bufferSize = Math.floor(ctx.sampleRate * 0.09);
+      const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+      const data = buffer.getChannelData(0);
+      for (let j = 0; j < bufferSize; j++) data[j] = (Math.random() * 2 - 1) * Math.exp(-j / (bufferSize * 0.28));
+      const noise = ctx.createBufferSource();
+      noise.buffer = buffer;
+      const filter = ctx.createBiquadFilter();
+      filter.type = "highpass"; filter.frequency.value = 1200;
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0.45, t);
+      noise.connect(filter); filter.connect(gain); gain.connect(ctx.destination);
+      noise.start(t);
+    }
+  } catch (e) {}
+}
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+function ShapeSwatch({ item, size }) {
+  if (item.emoji) return <div style={{ fontSize: size }}>{item.emoji}</div>;
+  return (
+    <div style={{
+      width: size, height: size, background: item.hex,
+      clipPath: item.clip !== "none" ? item.clip : undefined,
+      borderRadius: item.radius || 0,
+      filter: "drop-shadow(0 6px 4px rgba(0,0,0,0.22))",
+    }} />
+  );
+}
+
+function TapFindGame({ items, accent, bg, onExit, renderSwatch }) {
+  const [order] = useState(() => shuffle(items));
+  const [idx, setIdx] = useState(0);
+  const [found, setFound] = useState({});
+  const [popup, setPopup] = useState(null);
+  const [peek, setPeek] = useState(null);
+  const [hint, setHint] = useState(false);
+  const timeoutRef = useRef(null);
+  const target = order[idx];
+  const allFound = idx >= order.length;
+
+  useEffect(() => {
+    if (target) {
+      const t = setTimeout(() => speakMany([`${target.label}在哪裡？找找看`, target.label, target.label]), 350);
+      return () => clearTimeout(t);
+    }
+  }, [target]);
+
+  function tapItem(item) {
+    if (!target) return;
+    if (item.id === target.id) {
+      setFound((f) => ({ ...f, [item.id]: true }));
+      setPopup(item);
+      playApplause();
+      speakMany([item.label, item.label]);
+      setHint(false);
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = setTimeout(() => { setPopup(null); setIdx((i) => i + 1); }, 1700);
+    } else {
+      setPeek(item.id);
+      speak(item.label, 0.65);
+      setTimeout(() => setPeek(null), 900);
+    }
+  }
+
+  return (
+    <div style={{ width: "100%", maxWidth: 1200 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+        <button onClick={onExit} style={{ background: "none", border: "none", fontWeight: 700, fontSize: 14, color: "#8A6B3F" }}>← 回主選單</button>
+        <div style={{ background: "#fff", border: "2px solid #F2C94C", borderRadius: 999, padding: "6px 14px", fontWeight: 700, fontSize: 14 }}>
+          ⭐ {Object.keys(found).length}/{order.length}
+        </div>
+      </div>
+
+      {!allFound && target && (
+        <div style={{ background: "#fff", border: `2px solid ${accent}`, borderRadius: 16, padding: "10px 14px", marginBottom: 12, display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          <div style={{ fontSize: 15, fontWeight: 800 }}>🔍 {target.label}在哪裡？</div>
+          <div style={{ display: "flex", gap: 6 }}>
+            <button onClick={() => speakMany([`${target.label}在哪裡？找找看`, target.label, target.label])} style={{ background: "#F1E9DA", border: "none", borderRadius: 999, padding: "6px 10px", fontSize: 13, fontWeight: 700 }}>🔊</button>
+            <button onClick={() => { setHint(true); setTimeout(() => setHint(false), 2200); }} style={{ background: "#FFE9B3", border: "none", borderRadius: 999, padding: "6px 10px", fontSize: 13, fontWeight: 700 }}>💡 提示</button>
+          </div>
+        </div>
+      )}
+
+      <div style={{
+        position: "relative", width: "100%", aspectRatio: "16 / 8", borderRadius: 22, overflow: "hidden",
+        border: "6px solid #fff", boxShadow: `0 0 0 4px ${accent}, 0 10px 0 rgba(0,0,0,0.08)`, background: bg,
+      }}>
+        {order.map((item, i) => {
+          const p = POS[i % POS.length];
+          const isTarget = target && target.id === item.id;
+          const isFoundItem = found[item.id];
+          const showPeek = peek === item.id;
+          return (
+            <div key={item.id} style={{ position: "absolute", top: `${p.top}%`, left: `${p.left}%`, transform: "translate(-50%,-50%)" }}>
+              <button
+                className="tap-item"
+                onClick={() => tapItem(item)}
+                style={{
+                  background: "none", border: "none", position: "relative", display: "inline-block",
+                  opacity: isFoundItem ? 0.55 : 1,
+                  animation: hint && isTarget ? "softPulse 1s ease-in-out infinite" : `idleBob 3.2s ease-in-out ${(i % 5) * 0.35}s infinite`,
+                }}
+              >
+                {renderSwatch(item, 76)}
+                {isFoundItem && <span style={{ position: "absolute", top: -6, right: -6, fontSize: 16 }}>⭐</span>}
+              </button>
+              {showPeek && (
+                <div style={{ position: "absolute", bottom: "100%", left: "50%", transform: "translateX(-50%)", background: "#fff", border: "2px solid #EEE3CC", borderRadius: 10, padding: "3px 8px", fontSize: 12, fontWeight: 700, whiteSpace: "nowrap", marginBottom: 4 }}>
+                  {item.label}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {allFound && (
+        <div style={{ marginTop: 18, textAlign: "center", background: "#FFF3D0", border: "2px solid #F2C94C", borderRadius: 18, padding: "18px", fontWeight: 800 }}>
+          🎉 太棒了，全部找完了！
+          <div style={{ marginTop: 10 }}>
+            <button onClick={onExit} style={{ background: accent, color: "#fff", border: "none", borderRadius: 999, padding: "8px 20px", fontWeight: 700 }}>回主選單</button>
+          </div>
+        </div>
+      )}
+
+      {popup && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(74,59,42,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 20, padding: 20 }}>
+          <div style={{ background: "#fff", borderRadius: 28, padding: "34px 30px", textAlign: "center", animation: "pop 0.4s ease-out", border: `4px solid ${accent}`, minWidth: 220 }}>
+            <div style={{ fontSize: 26, marginBottom: 4, animation: "clapBounce 0.6s ease-in-out infinite" }}>👏 👏 👏</div>
+            <div style={{ marginBottom: 8, display: "flex", justifyContent: "center" }}>{renderSwatch(popup, 100)}</div>
+            <div style={{ fontSize: 30, fontWeight: 800 }}>{popup.label}</div>
+            <div style={{ fontSize: 22, marginTop: 6 }}>⭐ 找到了！好棒！</div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MatchCountGame({ onExit }) {
+  const rounds = useMemo(() => shuffle([1, 2, 3, 4, 5, 6]), []);
+  const [idx, setIdx] = useState(0);
+  const [choices, setChoices] = useState([]);
+  const [popup, setPopup] = useState(null);
+  const [wrongId, setWrongId] = useState(null);
+  const timeoutRef = useRef(null);
+  const n = rounds[idx];
+  const emoji = COUNT_EMOJI[idx % COUNT_EMOJI.length];
+  const done = idx >= rounds.length;
+
+  useEffect(() => {
+    if (done) return;
+    const distractors = new Set();
+    while (distractors.size < 2) {
+      const d = n + (Math.random() < 0.5 ? -1 : 1) * (1 + Math.floor(Math.random() * 2));
+      if (d >= 1 && d <= 10 && d !== n) distractors.add(d);
+    }
+    setChoices(shuffle([n, ...distractors]));
+    const t = setTimeout(() => speakMany([`這裡有幾個？數數看`]), 350);
+    return () => clearTimeout(t);
+  }, [idx, done]);
+
+  function pick(num) {
+    if (num === n) {
+      setPopup(num);
+      playApplause();
+      speakMany([`對，${num}個`, String(num)]);
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = setTimeout(() => { setPopup(null); setIdx((i) => i + 1); }, 1600);
+    } else {
+      setWrongId(num);
+      speak(String(num), 0.65);
+      setTimeout(() => setWrongId(null), 500);
+    }
+  }
+
+  return (
+    <div style={{ width: "100%", maxWidth: 700 }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 12 }}>
+        <button onClick={onExit} style={{ background: "none", border: "none", fontWeight: 700, fontSize: 14, color: "#8A6B3F" }}>← 回主選單</button>
+        <div style={{ background: "#fff", border: "2px solid #F2C94C", borderRadius: 999, padding: "6px 14px", fontWeight: 700, fontSize: 14 }}>⭐ {idx}/{rounds.length}</div>
+      </div>
+
+      {!done ? (
+        <div style={{ background: "#fff", border: "3px solid #C9679B", borderRadius: 22, padding: "26px 18px", textAlign: "center" }}>
+          <div style={{ fontWeight: 800, fontSize: 16, marginBottom: 14 }}>這裡有幾個？數數看 🔊</div>
+          <div style={{ fontSize: 50, marginBottom: 20, letterSpacing: 8, wordBreak: "break-all" }}>
+            {Array.from({ length: n }, (_, i) => <span key={i}>{emoji}</span>)}
+          </div>
+          <div style={{ display: "flex", gap: 14, justifyContent: "center" }}>
+            {choices.map((c) => (
+              <button key={c} onClick={() => pick(c)} style={{
+                width: 68, height: 68, borderRadius: 18, fontSize: 28, fontWeight: 800,
+                background: wrongId === c ? "#FBD6D8" : "#FFF3D0", border: "3px solid #F2C94C", color: "#5A4300",
+              }}>{c}</button>
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div style={{ textAlign: "center", background: "#FFF3D0", border: "2px solid #F2C94C", borderRadius: 18, padding: "18px", fontWeight: 800 }}>
+          🎉 太棒了，都數對了！
+          <div style={{ marginTop: 10 }}>
+            <button onClick={onExit} style={{ background: "#C9679B", color: "#fff", border: "none", borderRadius: 999, padding: "8px 20px", fontWeight: 700 }}>回主選單</button>
+          </div>
+        </div>
+      )}
+
+      {popup && (
+        <div style={{ position: "fixed", inset: 0, background: "rgba(74,59,42,0.4)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 20 }}>
+          <div style={{ background: "#fff", borderRadius: 28, padding: "34px 40px", textAlign: "center", animation: "pop 0.4s ease-out", border: "4px solid #C9679B" }}>
+            <div style={{ fontSize: 26, animation: "clapBounce 0.6s ease-in-out infinite" }}>👏 👏 👏</div>
+            <div style={{ fontSize: 60, fontWeight: 800 }}>{popup}</div>
+            <div style={{ fontSize: 20 }}>⭐ 答對了！</div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function PreschoolGames() {
+  const [mode, setMode] = useState("home");
+
+  const MODES = [
+    { id: "color", name: "顏色小偵探", emoji: "🎨", accent: "#E9636B" },
+    { id: "shape", name: "形狀小偵探", emoji: "⭐", accent: "#4FA3D1" },
+    { id: "number", name: "數字1～10", emoji: "🔢", accent: "#6FB07F" },
+    { id: "match", name: "數一數連連看", emoji: "🧩", accent: "#C9679B" },
+  ];
+
+  return (
+    <div style={{
+      fontFamily: "'Baloo 2', 'Nunito', sans-serif", minHeight: "100vh",
+      background: "radial-gradient(circle at 20% 10%, #FFF6E6 0%, #FDEFD9 40%, #F7E3BE 100%)",
+      color: "#4A3B2A", display: "flex", flexDirection: "column", alignItems: "center",
+      padding: "18px 14px 40px", boxSizing: "border-box",
+    }}>
+      <style>{`
+        @import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@500;700&display=swap');
+        * { box-sizing: border-box; }
+        button { font-family: inherit; cursor: pointer; }
+        .tap-item { transition: transform 0.15s ease; }
+        .tap-item:active { transform: scale(0.9); }
+        @keyframes pop { 0% { transform: scale(0.5) translateY(20px); opacity:0 } 70% { transform: scale(1.06); opacity:1 } 100% { transform: scale(1) translateY(0); } }
+        @keyframes softPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(255,214,89,0.7); } 50% { box-shadow: 0 0 0 14px rgba(255,214,89,0); } }
+        @keyframes clapBounce { 0%,100% { transform: scale(1) rotate(-4deg); } 50% { transform: scale(1.18) rotate(4deg); } }
+        @keyframes idleBob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-4px); } }
+        @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+      `}</style>
+
+      {mode === "home" && (
+        <div style={{ width: "100%", maxWidth: 700 }}>
+          <div style={{ fontSize: 24, fontWeight: 800, marginBottom: 2 }}>學齡前小遊戲</div>
+          <div style={{ fontSize: 13, opacity: 0.65, marginBottom: 18, fontWeight: 500 }}>顏色、形狀、數字，邊玩邊學著說說看</div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+            {MODES.map((m) => (
+              <button key={m.id} onClick={() => setMode(m.id)} style={{
+                background: "#fff", border: `3px solid ${m.accent}`, borderRadius: 20, padding: "22px 8px 18px",
+                display: "flex", flexDirection: "column", alignItems: "center", gap: 6, boxShadow: `0 4px 0 ${m.accent}`,
+              }}>
+                <div style={{ fontSize: 40 }}>{m.emoji}</div>
+                <div style={{ fontWeight: 800, fontSize: 16 }}>{m.name}</div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {mode === "color" && (
+        <TapFindGame
+          items={COLORS} accent="#E9636B" bg="linear-gradient(135deg,#FFF8ED,#FDEFD9)"
+          onExit={() => setMode("home")}
+          renderSwatch={(item, size) => <ShapeSwatch item={{ ...item, clip: "circle(50% at 50% 50%)" }} size={size} />}
+        />
+      )}
+
+      {mode === "shape" && (
+        <TapFindGame
+          items={SHAPES} accent="#4FA3D1" bg="linear-gradient(135deg,#FFF8ED,#FDEFD9)"
+          onExit={() => setMode("home")}
+          renderSwatch={(item, size) => <ShapeSwatch item={item} size={size} />}
+        />
+      )}
+
+      {mode === "number" && (
+        <TapFindGame
+          items={NUMBERS} accent="#6FB07F" bg="linear-gradient(135deg,#FFF8ED,#FDEFD9)"
+          onExit={() => setMode("home")}
+          renderSwatch={(item, size) => (
+            <div style={{
+              width: size, height: size, background: item.hex, borderRadius: 16,
+              display: "flex", alignItems: "center", justifyContent: "center",
+              color: "#fff", fontWeight: 800, fontSize: size * 0.55,
+              filter: "drop-shadow(0 6px 4px rgba(0,0,0,0.22))",
+            }}>{item.label}</div>
+          )}
+        />
+      )}
+
+      {mode === "match" && <MatchCountGame onExit={() => setMode("home")} />}
+    </div>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById("root"));
+root.render(<PreschoolGames />);
+</script>
+</body>
+</html>

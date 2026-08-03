@@ -33,39 +33,57 @@
       background: linear-gradient(180deg, #8FD3F4 0%, #B9E8FF 55%, #DFF6DA 100%);
     }
 
-    /* 氣球升起與晃動動畫 */
-    @keyframes rise {
-      from { transform: translateX(-50%) translateY(0); }
-      to { transform: translateX(-50%) translateY(-125vh); }
+    /* 氣球飛升關鍵動畫關鍵幀 */
+    @keyframes riseUp {
+      0% {
+        transform: translateY(100vh) scale(0.9);
+        opacity: 0.95;
+      }
+      100% {
+        transform: translateY(-130vh) scale(1);
+        opacity: 0.95;
+      }
     }
-    @keyframes sway {
-      0%, 100% { transform: translateX(-50%) rotate(-3deg); }
-      50% { transform: translateX(-50%) rotate(3deg); }
+
+    @keyframes swayX {
+      0%, 100% { transform: translateX(-5px) rotate(-3deg); }
+      50% { transform: translateX(5px) rotate(3deg); }
     }
-    @keyframes shake {
-      0%, 100% { transform: translateX(-50%) translateX(0); }
-      25% { transform: translateX(-50%) translateX(-10px); }
-      75% { transform: translateX(-50%) translateX(10px); }
+
+    @keyframes shakeErr {
+      0%, 100% { transform: scale(1) rotate(0deg); }
+      20% { transform: scale(1.1) rotate(-8deg); }
+      40% { transform: scale(1.1) rotate(8deg); }
+      60% { transform: scale(1.1) rotate(-8deg); }
+      80% { transform: scale(1.1) rotate(8deg); }
     }
-    @keyframes pop {
-      0% { opacity: 1; transform: translateX(-50%) scale(1); }
-      50% { opacity: 0.9; transform: translateX(-50%) scale(1.35); }
-      100% { opacity: 0; transform: translateX(-50%) scale(0.1); }
+
+    @keyframes popBoom {
+      0% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.8; transform: scale(1.4); }
+      100% { opacity: 0; transform: scale(0.1); }
     }
+
     @keyframes floatUp {
       0% { opacity: 1; transform: translateY(0) scale(1); }
       100% { opacity: 0; transform: translateY(-80px) scale(1.4); }
     }
-    @keyframes bounceIn {
-      0% { transform: scale(0.7); opacity: 0; }
-      60% { transform: scale(1.08); opacity: 1; }
-      100% { transform: scale(1); }
+
+    .balloon-rising {
+      animation: riseUp var(--rise-duration, 7s) linear forwards;
     }
 
-    .animate-rise { animation: rise linear forwards; }
-    .animate-sway { animation: sway 2.2s ease-in-out infinite; }
-    .animate-shake { animation: shake 0.4s ease; }
-    .animate-pop { animation: pop 0.45s forwards ease-out; }
+    .balloon-sway {
+      animation: swayX 2.2s ease-in-out infinite;
+    }
+
+    .balloon-pop {
+      animation: popBoom 0.4s ease-out forwards !important;
+    }
+
+    .balloon-shake {
+      animation: shakeErr 0.4s ease-in-out !important;
+    }
 
     /* 可愛立體按鈕 */
     .btn-cute {
@@ -77,26 +95,29 @@
       box-shadow: 0 4px 0 0 rgba(0, 0, 0, 0.15), inset 0 2px 0 rgba(255, 255, 255, 0.6);
     }
 
-    /* 氣球造型 */
+    /* 氣球容器與本體 */
     .balloon-wrapper {
       position: absolute;
-      bottom: -140px;
+      bottom: -150px;
       cursor: pointer;
-      z-index: 20;
+      z-index: 25;
+      will-change: transform;
     }
+
     .balloon-body {
-      width: clamp(80px, 16vw, 115px);
-      height: clamp(98px, 19vw, 138px);
+      width: clamp(85px, 18vw, 120px);
+      height: clamp(105px, 22vw, 145px);
       border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
       display: flex;
       align-items: center;
       justify-content: center;
-      box-shadow: inset -10px -10px 18px rgba(0,0,0,0.2), inset 10px 10px 18px rgba(255,255,255,0.7);
+      box-shadow: inset -10px -10px 18px rgba(0,0,0,0.2), inset 10px 10px 18px rgba(255,255,255,0.7), 0 8px 15px rgba(0,0,0,0.15);
     }
+
     .balloon-string {
-      width: 2px;
-      height: 48px;
-      background: #8a7a5c;
+      width: 3px;
+      height: 50px;
+      background: rgba(138, 122, 92, 0.7);
       margin: 0 auto;
     }
 
@@ -108,24 +129,24 @@
     }
   </style>
 </head>
-<body class="relative flex flex-col justify-between select-none overflow-hidden">
+<body class="relative flex flex-col justify-between select-none overflow-hidden h-screen w-screen">
 
-  <!-- 雲朵與背景裝飾 -->
-  <div class="absolute inset-0 pointer-events-none z-0">
+  <!-- 背景天空與城堡裝飾 -->
+  <div class="absolute inset-0 pointer-events-none z-0 overflow-hidden">
     <div class="absolute top-[4%] left-[8%] text-5xl opacity-80 animate-pulse">☁️</div>
     <div class="absolute top-[9%] left-[62%] text-4xl opacity-80 animate-pulse">☁️</div>
     <div class="absolute top-[3%] left-[82%] text-3xl opacity-70">☁️</div>
     <div class="absolute bottom-0 left-[45%] text-8xl sm:text-9xl opacity-80">🏰</div>
-    <div class="absolute -bottom-3 inset-x-0 h-[10%] bg-emerald-400 rounded-t-[100%]"></div>
+    <div class="absolute -bottom-3 inset-x-0 h-[12%] bg-emerald-400 rounded-t-[100%]"></div>
   </div>
 
   <!-- Toast 訊息提示區域 -->
   <div id="toast-el" class="hidden fixed top-4 left-1/2 -translate-x-1/2 bg-amber-100 border-2 border-amber-400 text-amber-900 font-black px-6 py-2 rounded-full shadow-2xl z-50 text-xl animate-bounce">
   </div>
 
-  <!-- 頂部導覽列 -->
-  <header class="relative z-30 w-full max-w-5xl mx-auto p-3 flex items-center justify-between gap-2">
-    <!-- 切換玩家帳號 -->
+  <!-- 頂部資訊工具列 -->
+  <header class="relative z-40 w-full max-w-5xl mx-auto p-3 flex items-center justify-between gap-2">
+    <!-- 切換玩家 -->
     <button onclick="openUserModal()" class="btn-cute bg-white/90 text-amber-900 font-black text-lg sm:text-2xl px-4 py-2 rounded-2xl border-2 border-amber-300 flex items-center space-x-2">
       <span>👑</span>
       <span id="current-user-name">小寶貝</span>
@@ -138,7 +159,7 @@
       <span id="user-stars" class="text-3xl font-black text-amber-900">0</span>
     </div>
 
-    <!-- 首頁與功能鈕 -->
+    <!-- 功能鈕 -->
     <div class="flex space-x-2">
       <button id="home-nav-btn" onclick="goHome()" class="btn-cute bg-white/90 text-gray-700 font-black p-3 rounded-2xl border-2 border-gray-200">
         <i class="fas fa-home text-2xl"></i>
@@ -149,8 +170,8 @@
     </div>
   </header>
 
-  <!-- 主遊戲檢視區域 -->
-  <main class="relative z-10 flex-1 w-full max-w-5xl mx-auto flex flex-col items-center justify-between">
+  <!-- 主畫面檢視區 -->
+  <main class="relative z-10 flex-1 w-full max-w-5xl mx-auto flex flex-col items-center justify-between overflow-hidden">
 
     <!-- ================= 頁面 1: 主選單 ================= -->
     <section id="screen-home" class="w-full flex-1 flex flex-col items-center justify-center p-4 text-center">
@@ -161,18 +182,16 @@
         聽數字、射氣球，趁它飛走前抓住它！
       </p>
 
-      <!-- SVG 英雄動態顯示區 -->
+      <!-- 英雄角色展示 -->
       <div class="my-2 cursor-pointer transform hover:scale-105 transition-transform" onclick="openShop()">
         <div id="home-archer-container" class="w-[180px] h-[190px]"></div>
         <p id="home-character-name" class="text-xl font-black text-amber-900 mt-1">森林小獵人</p>
       </div>
 
-      <!-- 成就徽章列表 -->
-      <div id="home-achievements" class="flex justify-center gap-3 my-3">
-        <!-- JS 動態渲染 -->
-      </div>
+      <!-- 成就徽章 -->
+      <div id="home-achievements" class="flex justify-center gap-3 my-3"></div>
 
-      <!-- 模式選單按鈕 -->
+      <!-- 模式選擇 -->
       <div class="w-full max-w-md flex flex-col space-y-3 mt-2">
         <button onclick="startRound(10)" class="btn-cute bg-amber-400 hover:bg-amber-500 text-white font-black text-2xl py-4 rounded-2xl border-2 border-amber-300">
           🎯 1 ～ 10 練習關
@@ -186,13 +205,11 @@
       </div>
     </section>
 
-    <!-- ================= 頁面 2: 進行遊戲區 ================= -->
-    <section id="screen-game" class="hidden w-full flex-1 flex flex-col justify-between relative overflow-hidden">
-      <!-- 關卡進度條與重聽題目按鈕 -->
-      <div class="w-full flex flex-col items-center z-30">
-        <div id="progress-dots" class="flex space-x-2 my-2">
-          <!-- 8 個小點顯示進度 -->
-        </div>
+    <!-- ================= 頁面 2: 遊戲進行區域 ================= -->
+    <section id="screen-game" class="hidden w-full flex-1 flex flex-col justify-between relative overflow-hidden h-full">
+      <!-- 關卡進度與語音報號鈕 -->
+      <div class="w-full flex flex-col items-center z-30 pt-1">
+        <div id="progress-dots" class="flex space-x-2 mb-2"></div>
 
         <button onclick="speakTarget()" class="bg-white border-4 border-amber-300 rounded-full px-6 py-3 shadow-xl flex items-center space-x-3 text-amber-900 font-black text-2xl sm:text-3xl animate-bounce">
           <span class="text-3xl text-amber-500">🔊</span>
@@ -200,18 +217,18 @@
         </button>
       </div>
 
-      <!-- 氣球飛升遊玩區 -->
-      <div id="balloon-area" class="relative flex-1 w-full overflow-hidden">
-        <!-- 動態氣球由 JS 插入 -->
+      <!-- 氣球升起畫布區域 (全螢幕定位) -->
+      <div id="balloon-area" class="absolute inset-0 z-20 pointer-events-auto overflow-hidden">
+        <!-- 氣球將動態產生並向上飄升 -->
       </div>
 
-      <!-- 底部英雄與拉弓角色 -->
-      <div class="relative z-20 w-full flex justify-start pl-4 pb-2 pointer-events-none">
+      <!-- 底部獵人與弓箭 -->
+      <div class="relative z-30 w-full flex justify-start pl-4 pb-2 pointer-events-none">
         <div id="game-archer-container" class="w-[140px] h-[150px]"></div>
       </div>
     </section>
 
-    <!-- ================= 頁面 3: 通關結算區 ================= -->
+    <!-- ================= 頁面 3: 通關結算 ================= -->
     <section id="screen-result" class="hidden w-full flex-1 flex flex-col items-center justify-center p-6 text-center">
       <div class="text-7xl mb-2 animate-bounce">🎉</div>
       <h2 class="text-4xl sm:text-5xl font-black text-white drop-shadow-[0_4px_4px_rgba(0,0,0,0.3)] mb-4">
@@ -246,13 +263,11 @@
         <button onclick="closeShop()" class="text-3xl text-amber-900"><i class="fas fa-times"></i></button>
       </div>
 
-      <!-- 造型預覽 -->
       <div class="flex flex-col items-center my-2">
         <div id="shop-preview-container" class="w-[140px] h-[150px]"></div>
         <p id="shop-preview-name" class="text-lg font-black text-amber-900">森林小獵人</p>
       </div>
 
-      <!-- 商店分頁頁籤 -->
       <div class="flex justify-center gap-2 mb-4">
         <button onclick="setShopTab('character')" id="tab-btn-character" class="btn-cute px-4 py-2 rounded-xl font-black text-lg bg-amber-400 text-white">角色</button>
         <button onclick="setShopTab('hat')" id="tab-btn-hat" class="btn-cute px-4 py-2 rounded-xl font-black text-lg bg-white text-amber-900">帽子</button>
@@ -260,10 +275,7 @@
         <button onclick="setShopTab('bow')" id="tab-btn-bow" class="btn-cute px-4 py-2 rounded-xl font-black text-lg bg-white text-amber-900">弓箭</button>
       </div>
 
-      <!-- 商品展示網格 -->
-      <div id="shop-items-grid" class="grid grid-cols-2 gap-3 max-w-lg mx-auto mb-4">
-        <!-- JS 動態生成 -->
-      </div>
+      <div id="shop-items-grid" class="grid grid-cols-2 gap-3 max-w-lg mx-auto mb-4"></div>
 
       <button onclick="closeShop()" class="btn-cute bg-amber-400 text-white font-black text-2xl px-10 py-3 rounded-2xl">
         選好了！去開玩 🎯
@@ -271,13 +283,11 @@
     </div>
   </div>
 
-  <!-- ================= 彈出視窗 2: 多人帳號切換 Modal (最多5人) ================= -->
+  <!-- ================= 彈出視窗 2: 多人帳號切換 Modal ================= -->
   <div id="userModal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
     <div class="bg-white rounded-3xl border-4 border-amber-400 p-6 w-full max-w-md text-center shadow-2xl">
       <h2 class="text-3xl font-black text-amber-900 mb-4">👑 選擇或輸入你的名字</h2>
-      <div id="user-list" class="flex flex-col space-y-3 mb-4">
-        <!-- JS 動態生成 -->
-      </div>
+      <div id="user-list" class="flex flex-col space-y-3 mb-4"></div>
       <div class="flex space-x-2 mb-4">
         <input id="new-username-input" type="text" placeholder="輸入名字..." maxlength="6" class="flex-1 text-xl font-black p-3 border-2 border-amber-300 rounded-2xl text-center">
         <button onclick="addNewUser()" class="btn-cute bg-emerald-400 text-white font-black text-xl px-5 rounded-2xl">新增</button>
@@ -288,7 +298,7 @@
 
   <script>
     /* ==========================================
-       1. 資料與商店設定 catalog
+       1. 資料與商店設定 Catalog
        ========================================== */
     const CN_DIGITS = ["", "一", "二", "三", "四", "五", "六", "七", "八", "九"];
     function numberToChinese(n) {
@@ -347,7 +357,7 @@
     /* ==========================================
        2. 玩家個人資料儲存 (localStorage)
        ========================================== */
-    const STORAGE_KEY = "balloon_v2_users";
+    const STORAGE_KEY = "balloon_v3_users";
     let usersData = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {
       "小寶貝": {
         coins: 10, totalCorrect: 0,
@@ -355,12 +365,12 @@
         equippedHat: "none", equippedShirt: "green", equippedBow: "wood", equippedCharacter: "archer"
       }
     };
-    let currentUser = localStorage.getItem("balloon_v2_currentUser") || "小寶貝";
+    let currentUser = localStorage.getItem("balloon_v3_currentUser") || "小寶貝";
     if (!usersData[currentUser]) currentUser = Object.keys(usersData)[0] || "小寶貝";
 
     function saveData() {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(usersData));
-      localStorage.setItem("balloon_v2_currentUser", currentUser);
+      localStorage.setItem("balloon_v3_currentUser", currentUser);
       updateUserUI();
     }
 
@@ -377,7 +387,7 @@
     }
 
     /* ==========================================
-       3. 音效與語音朗讀
+       3. 音效與語音系統
        ========================================== */
     let isSoundOn = true;
     const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -428,7 +438,7 @@
     }
 
     /* ==========================================
-       4. SVG 射手角色動態渲染引擎
+       4. SVG 角色繪製
        ========================================== */
     function renderArcherSVG(hat, shirtColor, bowColor, accessory, shooting = false, size = 140) {
       const hatEmoji = HATS.find((h) => h.id === hat)?.emoji;
@@ -531,7 +541,7 @@
     }
 
     /* ==========================================
-       5. 氣球遊戲核心動態邏輯
+       5. 氣球升起與遊戲核心邏輯
        ========================================== */
     let currentMode = 10;
     let targetNumber = 1;
@@ -557,15 +567,18 @@
       nextQuestion();
 
       if (spawnTimer) clearInterval(spawnTimer);
+      // 定時生成新氣球
       spawnTimer = setInterval(() => {
         const alive = activeBalloons.filter(b => b.state === 'normal');
         if (alive.length >= (currentMode <= 10 ? 4 : 5)) return;
         const hasTarget = alive.some(b => b.value === targetNumber);
         spawnBalloon(!hasTarget && Math.random() < 0.6);
-      }, 1400);
+      }, 1500);
 
+      // 第一批氣球
       spawnBalloon(true);
-      setTimeout(() => spawnBalloon(false), 500);
+      setTimeout(() => spawnBalloon(false), 600);
+      setTimeout(() => spawnBalloon(false), 1200);
     }
 
     function nextQuestion() {
@@ -590,6 +603,9 @@
     }
 
     function spawnBalloon(forceTarget) {
+      const area = document.getElementById('balloon-area');
+      if (!area) return;
+
       let val;
       if (forceTarget) val = targetNumber;
       else {
@@ -597,29 +613,33 @@
       }
 
       const id = balloonIdCounter++;
-      const xPos = Math.floor(Math.random() * 65) + 15; // 15% ~ 80%
-      const duration = (currentMode <= 10 ? 6.5 : 5.5) + Math.random() * 2;
+      // 隨機 X 軸定位 (15% ~ 80%)
+      const xPos = Math.floor(Math.random() * 65) + 15;
+      const duration = (currentMode <= 10 ? 6.5 : 5.2) + Math.random() * 2;
       const color = BALLOON_COLORS[Math.floor(Math.random() * BALLOON_COLORS.length)];
 
       const wrapper = document.createElement('div');
-      wrapper.className = 'balloon-wrapper animate-rise animate-sway';
+      wrapper.className = 'balloon-wrapper balloon-rising';
       wrapper.style.left = xPos + '%';
-      wrapper.style.animationDuration = `${duration}s, 2.2s`;
+      wrapper.style.setProperty('--rise-duration', `${duration}s`);
 
       wrapper.innerHTML = `
-        <div class="balloon-body" style="background: radial-gradient(circle at 32% 28%, rgba(255,255,255,0.85), ${color} 55%);">
-          <span class="text-4xl sm:text-5xl font-black text-white drop-shadow-md">${val}</span>
+        <div class="balloon-sway">
+          <div class="balloon-body" style="background: radial-gradient(circle at 32% 28%, rgba(255,255,255,0.85), ${color} 55%);">
+            <span class="text-4xl sm:text-5xl font-black text-white drop-shadow-md">${val}</span>
+          </div>
+          <div class="balloon-string"></div>
         </div>
-        <div class="balloon-string"></div>
       `;
 
       wrapper.onclick = (e) => handleBalloonClick(id, val, wrapper, e);
 
-      document.getElementById('balloon-area').appendChild(wrapper);
+      area.appendChild(wrapper);
       activeBalloons.push({ id, value: val, element: wrapper, state: 'normal' });
 
+      // 當氣球完全升過畫面頂端時移除
       wrapper.addEventListener('animationend', (e) => {
-        if (e.animationName === 'rise') {
+        if (e.animationName === 'riseUp') {
           wrapper.remove();
           activeBalloons = activeBalloons.filter(b => b.id !== id);
         }
@@ -635,13 +655,12 @@
       const y = rect.top;
 
       if (val === targetNumber) {
-        // 射中正確題目
+        // 答對，射破氣球
         bObj.state = 'correct';
         playTone('correct');
         createParticles(x, y, '⭐');
 
-        element.classList.remove('animate-sway');
-        element.classList.add('animate-pop');
+        element.classList.add('balloon-pop');
 
         combo++;
         const bonus = combo > 0 && combo % 3 === 0 ? 2 : 0;
@@ -658,7 +677,7 @@
         setTimeout(() => {
           element.remove();
           activeBalloons = activeBalloons.filter(b => b.id !== id);
-        }, 450);
+        }, 400);
 
         roundIndex++;
         if (roundIndex >= roundTotal) {
@@ -668,15 +687,15 @@
         }
 
       } else {
-        // 射錯數字
+        // 答錯，震動提示
         bObj.state = 'wrong';
         playTone('wrong');
         combo = 0;
         createParticles(x, y, '💦');
 
-        element.classList.add('animate-shake');
+        element.classList.add('balloon-shake');
         setTimeout(() => {
-          element.classList.remove('animate-shake');
+          element.classList.remove('balloon-shake');
           bObj.state = 'normal';
         }, 450);
       }
@@ -817,7 +836,7 @@
 
         if (data[keyMap[type]].includes(item.id)) {
           data[eqMap[type]] = item.id;
-          data.equippedCharacter = 'archer'; // 換單品時切回森林小獵人
+          data.equippedCharacter = 'archer';
           saveData();
           renderShopItems();
           showToast(`已裝備：${item.name}`);
@@ -836,7 +855,7 @@
     }
 
     /* ==========================================
-       7. 多人帳號切換 Modal
+       7. 多人帳號管理 Modal
        ========================================== */
     function openUserModal() {
       renderUserList();
@@ -893,7 +912,7 @@
     }
 
     /* ==========================================
-       8. 特效與 Prompt 工具
+       8. 特效與提示
        ========================================== */
     function showToast(msg) {
       const toast = document.getElementById('toast-el');
@@ -914,7 +933,7 @@
       }
     }
 
-    // 系統初次載入
+    // 初始化
     window.onload = () => {
       saveData();
       updateUserUI();

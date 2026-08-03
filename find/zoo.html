@@ -1,0 +1,894 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>🌸 歡樂可愛小動物園 🐾</title>
+
+  <!-- 📌 iPhone 桌面 App 圖示：它會去抓您上傳到 GitHub 的 custom-icon.png 照片 -->
+  <link rel="apple-touch-icon" href="custom-icon.png">
+  <link rel="icon" type="image/png" href="custom-icon.png">
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Google Fonts for rounded cute text -->
+  <link href="https://fonts.googleapis.com/css2?family=Mochiyom+Pop+One&family=Zen+Maru+Gothic:wght@700;900&display=swap" rel="stylesheet">
+  
+  <style>
+    * {
+      touch-action: manipulation;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    body {
+      font-family: 'Zen Maru Gothic', 'Mochiyom Pop One', sans-serif;
+      transition: background 0.5s ease;
+      overflow-x: hidden;
+      min-height: 100vh;
+    }
+
+    /* 不同主題背景風格 */
+    .bg-theme-park { background: linear-gradient(135deg, #fff3f8 0%, #e0f2fe 50%, #fef9c3 100%); }
+    .bg-theme-forest { background: linear-gradient(135deg, #dcfce7 0%, #fef9c3 50%, #bbf7d0 100%); }
+    .bg-theme-beach { background: linear-gradient(135deg, #e0f2fe 0%, #bae6fd 50%, #fef3c7 100%); }
+    .bg-theme-night { background: linear-gradient(135deg, #312e81 0%, #4c1d95 50%, #1e1b4b 100%); color: white; }
+
+    /* 可愛動畫效果 */
+    @keyframes bounce-slow {
+      0%, 100% { transform: translateY(0) scale(1); }
+      50% { transform: translateY(-16px) scale(1.05); }
+    }
+    @keyframes jelly {
+      0% { transform: scale(1, 1); }
+      30% { transform: scale(1.3, 0.7); }
+      40% { transform: scale(0.7, 1.3); }
+      50% { transform: scale(1.15, 0.85); }
+      65% { transform: scale(0.95, 1.05); }
+      75% { transform: scale(1.05, 0.95); }
+      100% { transform: scale(1, 1); }
+    }
+    @keyframes float-bubble {
+      0%, 100% { transform: translateY(0px) rotate(0deg); }
+      50% { transform: translateY(-12px) rotate(5deg); }
+    }
+
+    .animate-jelly { animation: jelly 0.8s ease; }
+    .animate-bounce-cute { animation: bounce-slow 2.5s infinite ease-in-out; }
+    .animate-float { animation: float-bubble 4s infinite ease-in-out; }
+
+    /* 立體可愛按鈕 */
+    .btn-cute {
+      box-shadow: 0 10px 0 0 rgba(0, 0, 0, 0.15), inset 0 4px 0 rgba(255, 255, 255, 0.7);
+      transition: all 0.12s ease;
+    }
+    .btn-cute:active {
+      transform: translateY(6px);
+      box-shadow: 0 4px 0 0 rgba(0, 0, 0, 0.15), inset 0 2px 0 rgba(255, 255, 255, 0.7);
+    }
+
+    /* 記憶卡片翻轉效果 */
+    .perspective-1000 { perspective: 1000px; }
+    .card-inner {
+      transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+      transform-style: preserve-3d;
+    }
+    .card-flipped .card-inner {
+      transform: rotateY(180deg);
+    }
+    .card-front, .card-back {
+      backface-visibility: hidden;
+    }
+    .card-back {
+      transform: rotateY(180deg);
+    }
+
+    /* 動態粒子 */
+    .particle {
+      position: fixed;
+      pointer-events: none;
+      z-index: 9999;
+      animation: particlePop 1.2s forwards ease-out;
+    }
+    @keyframes particlePop {
+      0% { opacity: 1; transform: translate(-50%, -50%) scale(0.6) rotate(0deg); }
+      100% { opacity: 0; transform: translate(-50%, -160px) scale(2.2) rotate(60deg); }
+    }
+  </style>
+</head>
+<body id="app-body" class="bg-theme-park min-h-screen flex flex-col justify-between p-2 sm:p-5">
+
+  <!-- 頂部資訊列：帳號切換、金幣顯示、聲音與場景切換 -->
+  <header class="w-full max-w-6xl mx-auto bg-white/90 dark:bg-gray-800/90 backdrop-blur-md rounded-3xl p-3 sm:p-5 shadow-2xl border-4 border-pink-300 mb-3 flex flex-wrap items-center justify-between gap-3 animate-float">
+    
+    <!-- 玩家個人資料 & 點數 -->
+    <div class="flex items-center space-x-3">
+      <button onclick="openUserModal()" class="btn-cute bg-purple-400 hover:bg-purple-500 text-white font-black text-xl sm:text-2xl px-4 py-2 sm:px-5 sm:py-3 rounded-2xl border-2 border-purple-300 flex items-center space-x-2">
+        <span class="text-3xl sm:text-4xl">👑</span>
+        <span id="current-user-name" class="text-2xl sm:text-3xl">小寶貝</span>
+        <i class="fas fa-arrows-rotate text-lg"></i>
+      </button>
+
+      <!-- 巨型點數金幣 -->
+      <div class="bg-amber-300 border-4 border-amber-400 rounded-2xl px-4 py-2 sm:px-6 sm:py-3 flex items-center space-x-2 shadow-inner">
+        <span class="text-4xl sm:text-5xl animate-bounce-cute">🌟</span>
+        <span id="user-stars" class="text-4xl sm:text-6xl font-black text-amber-900 tracking-wider">0</span>
+      </div>
+    </div>
+
+    <!-- 右側功能：切換背景場景、商城、音效 -->
+    <div class="flex items-center space-x-2 sm:space-x-3">
+      <!-- 商城按鈕 -->
+      <button onclick="openShopModal()" class="btn-cute bg-pink-500 hover:bg-pink-600 text-white font-black text-xl sm:text-2xl px-4 py-3 rounded-2xl border-2 border-pink-300 flex items-center space-x-2">
+        <span class="text-3xl sm:text-4xl">🛍️</span>
+        <span class="hidden sm:inline">道具商城</span>
+      </button>
+
+      <!-- 背景切換按鈕 -->
+      <button onclick="cycleTheme()" class="btn-cute bg-sky-400 hover:bg-sky-500 text-white font-black text-xl sm:text-2xl p-3 rounded-2xl border-2 border-sky-300 flex items-center space-x-2" title="換場景">
+        <span class="text-3xl sm:text-4xl">🏞️</span>
+      </button>
+
+      <!-- 聲音按鈕 -->
+      <button id="soundBtn" onclick="toggleSound()" class="btn-cute bg-amber-400 hover:bg-amber-500 text-amber-950 font-black text-xl sm:text-2xl p-3 rounded-2xl border-2 border-amber-300 flex items-center">
+        <i id="soundIcon" class="fas fa-volume-up text-3xl sm:text-4xl"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- 遊戲模式切換分頁選單 (超大可點擊按鈕) -->
+  <nav class="w-full max-w-6xl mx-auto grid grid-cols-2 sm:grid-cols-4 gap-2 sm:gap-4 mb-3">
+    <button onclick="switchTab('feed')" id="tab-feed" class="btn-cute bg-pink-400 text-white font-black text-2xl sm:text-3xl py-3 sm:py-4 rounded-2xl sm:rounded-3xl border-4 border-pink-300 flex items-center justify-center space-x-2">
+      <span class="text-3xl sm:text-5xl">🥕</span>
+      <span>喂動物</span>
+    </button>
+    <button onclick="switchTab('color')" id="tab-color" class="btn-cute bg-white text-gray-700 font-black text-2xl sm:text-3xl py-3 sm:py-4 rounded-2xl sm:rounded-3xl border-4 border-sky-200 flex items-center justify-center space-x-2">
+      <span class="text-3xl sm:text-5xl">🎨</span>
+      <span>認顏色</span>
+    </button>
+    <button onclick="switchTab('memory')" id="tab-memory" class="btn-cute bg-white text-gray-700 font-black text-2xl sm:text-3xl py-3 sm:py-4 rounded-2xl sm:rounded-3xl border-4 border-purple-200 flex items-center justify-center space-x-2">
+      <span class="text-3xl sm:text-5xl">🃏</span>
+      <span>大翻牌</span>
+    </button>
+    <button onclick="switchTab('music')" id="tab-music" class="btn-cute bg-white text-gray-700 font-black text-2xl sm:text-3xl py-3 sm:py-4 rounded-2xl sm:rounded-3xl border-4 border-emerald-200 flex items-center justify-center space-x-2">
+      <span class="text-3xl sm:text-5xl">🥁</span>
+      <span>敲樂器</span>
+    </button>
+  </nav>
+
+  <!-- 主要遊戲互動主區域 (滿版大字體設計) -->
+  <main class="w-full max-w-6xl mx-auto flex-1 bg-white/95 dark:bg-gray-800/95 backdrop-blur-md rounded-3xl p-3 sm:p-6 shadow-2xl border-4 border-pink-200 flex flex-col items-center justify-center relative min-h-[500px]">
+
+    <!-- ================= 模式 1: 喂小動物 ================= -->
+    <section id="game-feed" class="w-full flex flex-col items-center justify-between h-full">
+      <div class="mb-2">
+        <span id="feed-hint" class="bg-yellow-200 text-yellow-950 font-black text-2xl sm:text-4xl px-6 py-2 sm:py-3 rounded-full border-4 border-yellow-400 inline-block shadow-md">
+          點擊食物餵給小動物吧！ 🍎
+        </span>
+      </div>
+
+      <!-- 切換可愛小動物 -->
+      <div class="flex justify-center space-x-2 sm:space-x-4 my-2">
+        <button onclick="selectAnimal('bunny')" class="animal-btn btn-cute p-2 sm:p-3 rounded-2xl bg-pink-100 border-4 border-pink-300 text-4xl sm:text-6xl">🐰</button>
+        <button onclick="selectAnimal('bear')" class="animal-btn btn-cute p-2 sm:p-3 rounded-2xl bg-amber-100 border-4 border-amber-300 text-4xl sm:text-6xl">🐻</button>
+        <button onclick="selectAnimal('panda')" class="animal-btn btn-cute p-2 sm:p-3 rounded-2xl bg-emerald-100 border-4 border-emerald-300 text-4xl sm:text-6xl">🐼</button>
+        <button onclick="selectAnimal('cat')" class="animal-btn btn-cute p-2 sm:p-3 rounded-2xl bg-orange-100 border-4 border-orange-300 text-4xl sm:text-6xl">🐱</button>
+        <button onclick="selectAnimal('unicorn')" class="animal-btn btn-cute p-2 sm:p-3 rounded-2xl bg-purple-100 border-4 border-purple-300 text-4xl sm:text-6xl">🦄</button>
+      </div>
+
+      <!-- 巨型動物主角與配戴道具區域 -->
+      <div id="animal-container" onclick="feedAnimalByClick(event)" class="cursor-pointer relative my-2 transform hover:scale-105 transition-transform flex flex-col items-center justify-center">
+        <!-- 穿戴的裝飾頭飾道具 -->
+        <div id="equipped-item" class="text-6xl sm:text-8xl -mb-8 z-10 animate-bounce"></div>
+        
+        <!-- 巨型角色主體 -->
+        <div id="animal-avatar" class="text-[150px] sm:text-[230px] leading-none animate-bounce-cute drop-shadow-2xl">
+          🐰
+        </div>
+        
+        <!-- 心情對話框 -->
+        <div id="speech-bubble" class="absolute -top-4 -right-4 bg-white dark:bg-gray-700 border-4 border-pink-400 rounded-3xl px-4 py-2 text-2xl sm:text-4xl font-black text-pink-600 dark:text-pink-300 shadow-xl animate-pulse max-w-xs text-center">
+          肚子好餓喔！
+        </div>
+      </div>
+
+      <!-- 超大食物選項按鈕 -->
+      <div class="w-full max-w-4xl mt-2">
+        <p class="text-2xl sm:text-3xl font-black text-gray-700 dark:text-gray-200 mb-2 text-center">請選擇美味食物：</p>
+        <div id="food-list" class="grid grid-cols-4 gap-2 sm:gap-4">
+          <!-- JS 動態生成 -->
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= 模式 2: 認顏色與圖形 ================= -->
+    <section id="game-color" class="w-full hidden flex-col items-center justify-between h-full">
+      <div class="mb-4 text-center">
+        <span id="color-question" class="bg-sky-200 text-sky-950 font-black text-3xl sm:text-5xl px-8 py-4 rounded-3xl border-4 border-sky-400 inline-block shadow-lg">
+          請找出【紅色的水果】！ 🍎
+        </span>
+      </div>
+
+      <!-- 超大選項區域 -->
+      <div id="color-options" class="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-6 w-full max-w-4xl my-4">
+        <!-- JS 動態生成選項 -->
+      </div>
+
+      <div class="bg-pink-100 border-4 border-pink-300 rounded-2xl px-6 py-2 text-2xl sm:text-4xl font-black text-pink-700">
+        連續答對：<span id="color-combo" class="text-4xl sm:text-6xl text-pink-600">0</span> 次 🌟
+      </div>
+    </section>
+
+    <!-- ================= 模式 3: 巨型卡片翻牌記憶 ================= -->
+    <section id="game-memory" class="w-full hidden flex-col items-center justify-between h-full">
+      <div class="mb-2 flex items-center justify-between w-full max-w-3xl">
+        <span class="bg-purple-200 text-purple-950 font-black text-2xl sm:text-4xl px-6 py-2 rounded-2xl border-4 border-purple-300">
+          配對動物圖案卡片 🃏
+        </span>
+        <button onclick="resetMemoryGame()" class="btn-cute bg-emerald-400 text-white font-black text-xl sm:text-3xl px-6 py-2 rounded-2xl border-2 border-emerald-300">
+          重新開始 🔄
+        </button>
+      </div>
+
+      <!-- 超大卡片矩陣 -->
+      <div id="memory-grid" class="grid grid-cols-3 sm:grid-cols-4 gap-3 sm:gap-5 w-full max-w-4xl my-2">
+        <!-- JS 動態生成卡片 -->
+      </div>
+    </section>
+
+    <!-- ================= 模式 4: 敲打歡樂樂器 (新增) ================= -->
+    <section id="game-music" class="w-full hidden flex-col items-center justify-between h-full">
+      <div class="mb-4 text-center">
+        <span class="bg-emerald-200 text-emerald-950 font-black text-3xl sm:text-5xl px-8 py-3 rounded-3xl border-4 border-emerald-400 inline-block">
+          敲敲打打！演奏美妙音樂 🎵
+        </span>
+      </div>
+
+      <!-- 繽紛木琴與大鼓琴鍵按鈕 -->
+      <div class="w-full max-w-4xl grid grid-cols-7 gap-2 sm:gap-3 my-4">
+        <button onclick="playNote(261.6, 'Do', '🔴', event)" class="btn-cute bg-red-400 text-white font-black text-3xl sm:text-5xl h-48 sm:h-64 rounded-3xl border-4 border-red-300 flex flex-col items-center justify-end pb-6">
+          <span>Do</span>
+        </button>
+        <button onclick="playNote(293.7, 'Re', '🟠', event)" class="btn-cute bg-orange-400 text-white font-black text-3xl sm:text-5xl h-48 sm:h-64 rounded-3xl border-4 border-orange-300 flex flex-col items-center justify-end pb-6">
+          <span>Re</span>
+        </button>
+        <button onclick="playNote(329.6, 'Mi', '🟡', event)" class="btn-cute bg-yellow-400 text-white font-black text-3xl sm:text-5xl h-48 sm:h-64 rounded-3xl border-4 border-yellow-300 flex flex-col items-center justify-end pb-6">
+          <span>Mi</span>
+        </button>
+        <button onclick="playNote(349.2, 'Fa', '🟢', event)" class="btn-cute bg-green-400 text-white font-black text-3xl sm:text-5xl h-48 sm:h-64 rounded-3xl border-4 border-green-300 flex flex-col items-center justify-end pb-6">
+          <span>Fa</span>
+        </button>
+        <button onclick="playNote(392.0, 'Sol', '🟦', event)" class="btn-cute bg-sky-400 text-white font-black text-3xl sm:text-5xl h-48 sm:h-64 rounded-3xl border-4 border-sky-300 flex flex-col items-center justify-end pb-6">
+          <span>Sol</span>
+        </button>
+        <button onclick="playNote(440.0, 'La', '🔵', event)" class="btn-cute bg-indigo-400 text-white font-black text-3xl sm:text-5xl h-48 sm:h-64 rounded-3xl border-4 border-indigo-300 flex flex-col items-center justify-end pb-6">
+          <span>La</span>
+        </button>
+        <button onclick="playNote(493.8, 'Si', '🟣', event)" class="btn-cute bg-purple-400 text-white font-black text-3xl sm:text-5xl h-48 sm:h-64 rounded-3xl border-4 border-purple-300 flex flex-col items-center justify-end pb-6">
+          <span>Si</span>
+        </button>
+      </div>
+
+      <p class="text-2xl sm:text-3xl font-black text-purple-600 dark:text-purple-300">
+        按下琴鍵會有漂亮的音符飄出來喔！✨
+      </p>
+    </section>
+
+  </main>
+
+  <!-- 底部溫馨提示 -->
+  <footer class="w-full max-w-6xl mx-auto text-center mt-2">
+    <div class="bg-white/80 dark:bg-gray-800/80 backdrop-blur-sm rounded-2xl p-2 sm:p-3 border-2 border-pink-200 shadow-sm inline-block">
+      <p class="text-lg sm:text-2xl font-black text-purple-700 dark:text-purple-300">
+        ✨ 玩遊戲要記得跟螢幕保持距離，保護亮晶晶的眼睛喔！ ✨
+      </p>
+    </div>
+  </footer>
+
+  <!-- ================= 彈出視窗 1: 玩家切換/新增帳號 (最多5人) ================= -->
+  <div id="userModal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-gray-800 rounded-3xl border-4 border-pink-400 p-6 w-full max-w-xl text-center shadow-2xl">
+      <h2 class="text-4xl font-black text-pink-500 mb-4">👑 選擇或輸入你的名字</h2>
+      <p class="text-2xl text-gray-600 dark:text-gray-300 mb-6">同一個名字可以繼續累積星星金幣喔！</p>
+      
+      <!-- 現有玩家列表 -->
+      <div id="user-list" class="grid grid-cols-1 gap-3 mb-6">
+        <!-- JS 動態生成 -->
+      </div>
+
+      <!-- 新增名字區域 -->
+      <div class="flex space-x-2 mb-6">
+        <input id="new-username-input" type="text" placeholder="輸入新名字..." maxlength="6" class="flex-1 text-2xl font-black p-3 border-4 border-purple-300 rounded-2xl text-center dark:bg-gray-700 dark:text-white">
+        <button onclick="addNewUser()" class="btn-cute bg-emerald-400 text-white font-black text-2xl px-6 py-3 rounded-2xl border-2 border-emerald-300">
+          新增
+        </button>
+      </div>
+
+      <button onclick="closeUserModal()" class="btn-cute bg-gray-400 text-white font-black text-2xl px-8 py-3 rounded-2xl border-2 border-gray-300">
+        關閉
+      </button>
+    </div>
+  </div>
+
+  <!-- ================= 彈出視窗 2: 道具商城 modal ================= -->
+  <div id="shopModal" class="hidden fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+    <div class="bg-white dark:bg-gray-800 rounded-3xl border-4 border-amber-400 p-6 w-full max-w-3xl text-center shadow-2xl max-h-[90vh] overflow-y-auto">
+      <h2 class="text-4xl font-black text-amber-500 mb-2">🛍️ 夢幻道具商城</h2>
+      <p class="text-2xl text-gray-600 dark:text-gray-300 mb-4">用星星金幣購買可愛飾品給小動物吧！</p>
+
+      <div id="shop-items-grid" class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+        <!-- JS 動態生成商品卡片 -->
+      </div>
+
+      <button onclick="closeShopModal()" class="btn-cute bg-pink-400 text-white font-black text-3xl px-10 py-3 rounded-2xl border-2 border-pink-300">
+        選好了！出去玩 🌸
+      </button>
+    </div>
+  </div>
+
+  <script>
+    /* ==========================================
+       1. 全域狀態與帳號儲存系統 (localStorage)
+       ========================================== */
+    let isSoundOn = true;
+    let synth = window.speechSynthesis;
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+
+    // 帳號資料範例，預設5位玩家 slot
+    let usersData = JSON.parse(localStorage.getItem('zoo_usersData')) || {
+      '小寶貝': { stars: 10, items: ['✨'] },
+      '哥哥': { stars: 5, items: [] },
+      '妹妹': { stars: 5, items: [] }
+    };
+
+    let currentUser = localStorage.getItem('zoo_currentUser') || '小寶貝';
+    if (!usersData[currentUser]) {
+      currentUser = Object.keys(usersData)[0] || '小寶貝';
+    }
+
+    // 儲存至 localStorage
+    function saveData() {
+      localStorage.setItem('zoo_usersData', JSON.stringify(usersData));
+      localStorage.setItem('zoo_currentUser', currentUser);
+      updateUserUI();
+    }
+
+    function updateUserUI() {
+      document.getElementById('current-user-name').innerText = currentUser;
+      document.getElementById('user-stars').innerText = usersData[currentUser].stars;
+      renderEquippedItem();
+    }
+
+    /* ==========================================
+       2. 音效與語音系統
+       ========================================== */
+    function playBeep(freq = 520, duration = 0.15, type = 'sine') {
+      if (!isSoundOn) return;
+      try {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+      } catch (e) {}
+    }
+
+    function playHappyFanfare() {
+      if (!isSoundOn) return;
+      const notes = [400, 500, 600, 800, 1000];
+      notes.forEach((freq, index) => {
+        setTimeout(() => playBeep(freq, 0.18, 'triangle'), index * 100);
+      });
+    }
+
+    function speakText(text) {
+      if (!isSoundOn || !synth) return;
+      synth.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'zh-TW';
+      utterance.rate = 0.9;
+      utterance.pitch = 1.3;
+      synth.speak(utterance);
+    }
+
+    function toggleSound() {
+      isSoundOn = !isSoundOn;
+      const soundIcon = document.getElementById('soundIcon');
+      if (isSoundOn) {
+        soundIcon.className = 'fas fa-volume-up text-3xl sm:text-4xl';
+        playBeep(600, 0.1);
+        speakText('聲音開啟');
+      } else {
+        soundIcon.className = 'fas fa-volume-mute text-3xl sm:text-4xl text-gray-400';
+        if (synth) synth.cancel();
+      }
+    }
+
+    /* ==========================================
+       3. 多主題背景切換
+       ========================================== */
+    const themes = ['bg-theme-park', 'bg-theme-forest', 'bg-theme-beach', 'bg-theme-night'];
+    let currentThemeIdx = 0;
+
+    function cycleTheme() {
+      const body = document.getElementById('app-body');
+      body.classList.remove(themes[currentThemeIdx]);
+      currentThemeIdx = (currentThemeIdx + 1) % themes.length;
+      body.classList.add(themes[currentThemeIdx]);
+      playBeep(700, 0.1);
+      speakText('換背景囉！');
+    }
+
+    /* ==========================================
+       4. 模式 1: 喂小動物邏輯與裝飾
+       ========================================== */
+    const animalsData = {
+      bunny: { name: '小兔子', emoji: '🐰', favorite: '🥕', msg: '兔兔最喜歡吃紅蘿蔔了！咔嚓咔嚓！' },
+      bear: { name: '大熊熊', emoji: '🐻', favorite: '🍯', msg: '熊熊最喜歡甜甜的蜂蜜了！好美味！' },
+      panda: { name: '大熊貓', emoji: '🐼', favorite: '🎋', msg: '熊貓啃著香香的竹子，好開心！' },
+      cat: { name: '小貓咪', emoji: '🐱', favorite: '🐟', msg: '喵喵～鮮美的魚魚最好吃了！' },
+      unicorn: { name: '彩虹獨角獸', emoji: '🦄', favorite: '🍓', msg: '獨角獸最喜歡香甜的草莓了！魔法閃亮亮！' }
+    };
+
+    const foodsData = [
+      { id: '🥕', name: '紅蘿蔔' },
+      { id: '🍯', name: '蜂蜜' },
+      { id: '🎋', name: '竹子' },
+      { id: '🐟', name: '鮮魚' },
+      { id: '🍎', name: '蘋果' },
+      { id: '🍌', name: '香蕉' },
+      { id: '🍓', name: '草莓' },
+      { id: '🍉', name: '西瓜' }
+    ];
+
+    let currentAnimalKey = 'bunny';
+    let currentEquippedItem = '';
+
+    function selectAnimal(key) {
+      currentAnimalKey = key;
+      const data = animalsData[key];
+      const avatarEl = document.getElementById('animal-avatar');
+      avatarEl.innerText = data.emoji;
+      avatarEl.classList.remove('animate-jelly');
+      void avatarEl.offsetWidth;
+      avatarEl.classList.add('animate-jelly');
+
+      document.getElementById('speech-bubble').innerText = `我是${data.name}，餵我吃東西吧！`;
+      playBeep(600, 0.1);
+      speakText(`我是${data.name}`);
+      renderFoods();
+    }
+
+    function renderFoods() {
+      const container = document.getElementById('food-list');
+      container.innerHTML = '';
+      foodsData.forEach(food => {
+        const btn = document.createElement('button');
+        btn.className = 'btn-cute bg-amber-100 hover:bg-amber-200 p-3 sm:p-4 rounded-3xl border-4 border-amber-300 text-5xl sm:text-7xl flex flex-col items-center justify-center transform active:scale-90 transition-all';
+        btn.innerHTML = `<span>${food.id}</span>`;
+        btn.onclick = (e) => feedAnimal(food.id, e);
+        container.appendChild(btn);
+      });
+    }
+
+    function feedAnimal(foodEmoji, event) {
+      const animal = animalsData[currentAnimalKey];
+      const avatarEl = document.getElementById('animal-avatar');
+      const bubble = document.getElementById('speech-bubble');
+
+      avatarEl.classList.remove('animate-jelly');
+      void avatarEl.offsetWidth;
+      avatarEl.classList.add('animate-jelly');
+
+      if (event) createParticles(event.clientX, event.clientY);
+
+      if (foodEmoji === animal.favorite) {
+        bubble.innerText = `太棒了！好喜歡吃${foodEmoji} ❤️`;
+        playHappyFanfare();
+        addStars(2); // 答對或餵對食物獲得星星
+        speakText(animal.msg);
+      } else {
+        bubble.innerText = `謝謝你！${foodEmoji} 也很好吃捏～ 😋`;
+        playBeep(450, 0.2);
+        addStars(1);
+        speakText(`好吃好吃！`);
+      }
+    }
+
+    function feedAnimalByClick(e) {
+      const animal = animalsData[currentAnimalKey];
+      feedAnimal(animal.favorite, e);
+    }
+
+    function renderEquippedItem() {
+      const el = document.getElementById('equipped-item');
+      if (currentEquippedItem) {
+        el.innerText = currentEquippedItem;
+      } else {
+        el.innerText = '';
+      }
+    }
+
+    /* ==========================================
+       5. 模式 2: 認顏色與形狀
+       ========================================== */
+    const colorQuestions = [
+      {
+        title: '請找出【紅色的蘋果】！',
+        targetEmoji: '🍎',
+        options: [
+          { emoji: '🍎', color: 'bg-red-100 border-red-400', isCorrect: true, name: '紅色蘋果' },
+          { emoji: '🍌', color: 'bg-yellow-100 border-yellow-400', isCorrect: false, name: '黃色香蕉' },
+          { emoji: '🫐', color: 'bg-blue-100 border-blue-400', isCorrect: false, name: '藍色藍莓' },
+          { emoji: '🍏', color: 'bg-green-100 border-green-400', isCorrect: false, name: '綠色蘋果' }
+        ]
+      },
+      {
+        title: '請找出【黃色的香蕉】！',
+        targetEmoji: '🍌',
+        options: [
+          { emoji: '🍇', color: 'bg-purple-100 border-purple-400', isCorrect: false, name: '紫色葡萄' },
+          { emoji: '🍌', color: 'bg-yellow-100 border-yellow-400', isCorrect: true, name: '黃色香蕉' },
+          { emoji: '🍓', color: 'bg-pink-100 border-pink-400', isCorrect: false, name: '粉色草莓' },
+          { emoji: '🍊', color: 'bg-orange-100 border-orange-400', isCorrect: false, name: '橘色柳丁' }
+        ]
+      },
+      {
+        title: '請找出【粉紅色的愛心】！',
+        targetEmoji: '💖',
+        options: [
+          { emoji: '⭐', color: 'bg-amber-100 border-amber-400', isCorrect: false, name: '黃色星星' },
+          { emoji: '🟢', color: 'bg-emerald-100 border-emerald-400', isCorrect: false, name: '綠色圓形' },
+          { emoji: '💖', color: 'bg-pink-100 border-pink-400', isCorrect: true, name: '粉紅愛心' },
+          { emoji: '🟦', color: 'bg-sky-100 border-sky-400', isCorrect: false, name: '藍色正方形' }
+        ]
+      },
+      {
+        title: '請找出【綠色的西瓜】！',
+        targetEmoji: '🍉',
+        options: [
+          { emoji: '🍉', color: 'bg-green-100 border-green-400', isCorrect: true, name: '綠色西瓜' },
+          { emoji: '🍍', color: 'bg-yellow-100 border-yellow-400', isCorrect: false, name: '黃色鳳梨' },
+          { emoji: '🍑', color: 'bg-orange-100 border-orange-400', isCorrect: false, name: '橘色蜜桃' },
+          { emoji: '🍆', color: 'bg-purple-100 border-purple-400', isCorrect: false, name: '紫色茄子' }
+        ]
+      }
+    ];
+
+    let colorCombo = 0;
+    let currentQuestionIdx = 0;
+
+    function initColorGame() {
+      const q = colorQuestions[currentQuestionIdx];
+      document.getElementById('color-question').innerText = q.title;
+      speakText(q.title);
+
+      const optionsGrid = document.getElementById('color-options');
+      optionsGrid.innerHTML = '';
+
+      q.options.forEach(opt => {
+        const btn = document.createElement('button');
+        btn.className = `btn-cute ${opt.color} rounded-3xl p-6 text-7xl sm:text-8xl border-4 flex flex-col items-center justify-center transform active:scale-90 transition-all shadow-lg`;
+        btn.innerHTML = `
+          <span>${opt.emoji}</span>
+          <span class="text-2xl sm:text-3xl font-black text-gray-800 mt-2">${opt.name}</span>
+        `;
+        btn.onclick = (e) => checkColorAnswer(opt, e);
+        optionsGrid.appendChild(btn);
+      });
+    }
+
+    function checkColorAnswer(option, event) {
+      if (option.isCorrect) {
+        colorCombo++;
+        document.getElementById('color-combo').innerText = colorCombo;
+        playHappyFanfare();
+        createParticles(event.clientX, event.clientY);
+        addStars(3); // 答對加3顆星星
+        speakText(`好棒喔！答對了！這是${option.name}`);
+
+        setTimeout(() => {
+          currentQuestionIdx = (currentQuestionIdx + 1) % colorQuestions.length;
+          initColorGame();
+        }, 1500);
+      } else {
+        playBeep(250, 0.3, 'sawtooth');
+        speakText(`再想想看喔～`);
+      }
+    }
+
+    /* ==========================================
+       6. 模式 3: 巨型記憶翻牌
+       ========================================== */
+    const memoryIcons = ['🐶', '🐱', '🦊', '🐸', '🦁', '🐻'];
+    let memoryCards = [];
+    let flippedCards = [];
+    let matchedPairs = 0;
+
+    function initMemoryGame() {
+      const grid = document.getElementById('memory-grid');
+      grid.innerHTML = '';
+      flippedCards = [];
+      matchedPairs = 0;
+
+      const selectedIcons = memoryIcons.slice(0, 6);
+      memoryCards = [...selectedIcons, ...selectedIcons].sort(() => Math.random() - 0.5);
+
+      memoryCards.forEach((icon, index) => {
+        const card = document.createElement('div');
+        card.className = 'card h-32 sm:h-44 w-full cursor-pointer perspective-1000';
+        card.dataset.index = index;
+        card.dataset.icon = icon;
+
+        card.innerHTML = `
+          <div class="card-inner w-full h-full relative rounded-3xl shadow-xl transition-all duration-500">
+            <div class="card-front absolute inset-0 bg-gradient-to-br from-pink-300 to-purple-300 rounded-3xl border-4 border-white flex items-center justify-center text-5xl sm:text-6xl text-white font-black shadow-md">
+              ❓
+            </div>
+            <div class="card-back absolute inset-0 bg-yellow-100 rounded-3xl border-4 border-yellow-300 flex items-center justify-center text-6xl sm:text-8xl shadow-md">
+              ${icon}
+            </div>
+          </div>
+        `;
+
+        card.onclick = () => handleCardClick(card);
+        grid.appendChild(card);
+      });
+    }
+
+    function handleCardClick(card) {
+      if (flippedCards.length >= 2 || card.classList.contains('card-flipped') || card.classList.contains('matched')) {
+        return;
+      }
+
+      playBeep(500, 0.1);
+      card.classList.add('card-flipped');
+      flippedCards.push(card);
+
+      if (flippedCards.length === 2) {
+        const [card1, card2] = flippedCards;
+        if (card1.dataset.icon === card2.dataset.icon) {
+          card1.classList.add('matched');
+          card2.classList.add('matched');
+          matchedPairs++;
+          playHappyFanfare();
+          addStars(2);
+          speakText('好厲害！配對成功！');
+
+          flippedCards = [];
+          if (matchedPairs === memoryCards.length / 2) {
+            setTimeout(() => {
+              addStars(10); // 通關大獎勵
+              speakText('恭喜通關！送你 10 顆星星金幣！');
+              playHappyFanfare();
+            }, 600);
+          }
+        } else {
+          setTimeout(() => {
+            playBeep(300, 0.15);
+            card1.classList.remove('card-flipped');
+            card2.classList.remove('card-flipped');
+            flippedCards = [];
+          }, 1000);
+        }
+      }
+    }
+
+    function resetMemoryGame() {
+      initMemoryGame();
+      speakText('重新開始囉！');
+    }
+
+    /* ==========================================
+       7. 模式 4: 敲打音樂樂器
+       ========================================== */
+    function playNote(freq, name, emoji, event) {
+      playBeep(freq, 0.35, 'triangle');
+      speakText(name);
+      if (event) createParticles(event.clientX, event.clientY, emoji);
+    }
+
+    /* ==========================================
+       8. 商城與獎勵系統
+       ========================================== */
+    const shopItems = [
+      { id: '✨', name: '魔法棒', price: 5 },
+      { id: '👑', name: '金皇冠', price: 10 },
+      { id: '🥳', name: '派對帽', price: 8 },
+      { id: '🎈', name: '紅氣球', price: 5 },
+      { id: '🌈', name: '彩虹光', price: 15 },
+      { id: '👼', name: '天使翅膀', price: 20 },
+      { id: '🫧', name: '夢幻泡泡', price: 12 },
+      { id: '🥇', name: '冠軍金牌', price: 18 }
+    ];
+
+    function openShopModal() {
+      renderShop();
+      document.getElementById('shopModal').classList.remove('hidden');
+      speakText('歡迎來到道具商城！');
+    }
+
+    function closeShopModal() {
+      document.getElementById('shopModal').classList.add('hidden');
+    }
+
+    function renderShop() {
+      const grid = document.getElementById('shop-items-grid');
+      grid.innerHTML = '';
+      const userItems = usersData[currentUser].items || [];
+
+      shopItems.forEach(item => {
+        const isBought = userItems.includes(item.id);
+        const card = document.createElement('div');
+        card.className = 'bg-amber-50 dark:bg-gray-700 border-4 border-amber-200 rounded-3xl p-4 flex flex-col items-center justify-between shadow-md';
+        
+        card.innerHTML = `
+          <div class="text-6xl sm:text-7xl my-2">${item.id}</div>
+          <div class="text-2xl font-black text-gray-800 dark:text-white mb-2">${item.name}</div>
+          ${isBought ? 
+            `<button onclick="equipItem('${item.id}')" class="btn-cute bg-emerald-400 text-white font-black text-xl px-4 py-2 rounded-2xl w-full">佩戴飾品</button>` :
+            `<button onclick="buyItem('${item.id}', ${item.price})" class="btn-cute bg-amber-400 hover:bg-amber-500 text-amber-950 font-black text-xl px-4 py-2 rounded-2xl w-full flex items-center justify-center space-x-1">
+              <span>🌟 ${item.price}</span>
+              <span>購買</span>
+             </button>`
+          }
+        `;
+        grid.appendChild(card);
+      });
+    }
+
+    function buyItem(itemId, price) {
+      if (usersData[currentUser].stars >= price) {
+        usersData[currentUser].stars -= price;
+        usersData[currentUser].items.push(itemId);
+        saveData();
+        renderShop();
+        playHappyFanfare();
+        speakText('購買成功！');
+        equipItem(itemId);
+      } else {
+        playBeep(250, 0.2);
+        speakText('星星不夠喔，多玩遊戲賺星星吧！');
+      }
+    }
+
+    function equipItem(itemId) {
+      currentEquippedItem = itemId;
+      renderEquippedItem();
+      speakText('穿戴飾品好漂亮！');
+      closeShopModal();
+    }
+
+    function addStars(count) {
+      usersData[currentUser].stars += count;
+      saveData();
+    }
+
+    /* ==========================================
+       9. 多人帳號切換 Modal (最多5人)
+       ========================================== */
+    function openUserModal() {
+      renderUserList();
+      document.getElementById('userModal').classList.remove('hidden');
+    }
+
+    function closeUserModal() {
+      document.getElementById('userModal').classList.add('hidden');
+    }
+
+    function renderUserList() {
+      const container = document.getElementById('user-list');
+      container.innerHTML = '';
+
+      Object.keys(usersData).forEach(name => {
+        const isCurrent = name === currentUser;
+        const btn = document.createElement('button');
+        btn.className = `btn-cute p-4 rounded-2xl text-2xl font-black flex items-center justify-between border-4 ${isCurrent ? 'bg-pink-400 text-white border-pink-300' : 'bg-gray-100 text-gray-700 border-gray-300'}`;
+        btn.innerHTML = `
+          <div class="flex items-center space-x-3">
+            <span class="text-3xl">👤</span>
+            <span>${name}</span>
+          </div>
+          <span class="text-amber-500 bg-white px-3 py-1 rounded-xl text-xl">🌟 ${usersData[name].stars}</span>
+        `;
+        btn.onclick = () => switchUser(name);
+        container.appendChild(btn);
+      });
+    }
+
+    function switchUser(name) {
+      currentUser = name;
+      saveData();
+      closeUserModal();
+      speakText(`你好，${currentUser}`);
+    }
+
+    function addNewUser() {
+      const input = document.getElementById('new-username-input');
+      const name = input.value.trim();
+      if (!name) return;
+
+      if (Object.keys(usersData).length >= 5) {
+        speakText('帳號已滿五個囉');
+        return;
+      }
+
+      if (!usersData[name]) {
+        usersData[name] = { stars: 5, items: [] };
+        currentUser = name;
+        saveData();
+        input.value = '';
+        closeUserModal();
+        speakText(`歡迎新朋友 ${name}`);
+      }
+    }
+
+    /* ==========================================
+       10. 分頁切換與愛心粒子特效
+       ========================================== */
+    function switchTab(tabName) {
+      playBeep(550, 0.1);
+
+      document.getElementById('game-feed').classList.add('hidden');
+      document.getElementById('game-color').classList.add('hidden');
+      document.getElementById('game-memory').classList.add('hidden');
+      document.getElementById('game-music').classList.add('hidden');
+
+      document.querySelectorAll('nav button').forEach(btn => {
+        btn.classList.remove('bg-pink-400', 'text-white', 'border-pink-300');
+        btn.classList.add('bg-white', 'text-gray-700');
+      });
+
+      const activeBtn = document.getElementById(`tab-${tabName}`);
+      activeBtn.classList.remove('bg-white', 'text-gray-700');
+      activeBtn.classList.add('bg-pink-400', 'text-white', 'border-pink-300');
+
+      if (tabName === 'feed') {
+        document.getElementById('game-feed').classList.remove('hidden');
+        document.getElementById('game-feed').classList.add('flex');
+        speakText('喂小動物模式');
+      } else if (tabName === 'color') {
+        document.getElementById('game-color').classList.remove('hidden');
+        document.getElementById('game-color').classList.add('flex');
+        initColorGame();
+      } else if (tabName === 'memory') {
+        document.getElementById('game-memory').classList.remove('hidden');
+        document.getElementById('game-memory').classList.add('flex');
+        initMemoryGame();
+        speakText('大卡片翻牌遊戲');
+      } else if (tabName === 'music') {
+        document.getElementById('game-music').classList.remove('hidden');
+        document.getElementById('game-music').classList.add('flex');
+        speakText('歡樂敲樂器模式');
+      }
+    }
+
+    function createParticles(x, y, customIcon) {
+      const icons = customIcon ? [customIcon] : ['💖', '🌟', '✨', '🍎', '🎉', '🎈'];
+      for (let i = 0; i < 6; i++) {
+        const p = document.createElement('div');
+        p.className = 'particle text-5xl sm:text-7xl';
+        p.innerText = icons[Math.floor(Math.random() * icons.length)];
+        p.style.left = (x + (Math.random() * 100 - 50)) + 'px';
+        p.style.top = (y + (Math.random() * 100 - 50)) + 'px';
+        document.body.appendChild(p);
+        setTimeout(() => p.remove(), 1200);
+      }
+    }
+
+    // 初始化載入
+    window.onload = () => {
+      saveData();
+      renderFoods();
+      selectAnimal('bunny');
+    };
+  </script>
+</body>
+</html>
+

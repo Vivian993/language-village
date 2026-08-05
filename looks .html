@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🌸 歡樂可愛兒童樂園 - 聽音找找樂園 🐾</title>
+  
+  <!-- 📌 iPhone 桌面 App 圖示：它會去抓您上傳到 GitHub 的 custom-icon.png 照片 -->
+  <link rel="apple-touch-icon" href="custom-icon.png">
+  <link rel="icon" type="image/png" href="custom-icon.png">
+
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <!-- Google Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Mochiyom+Pop+One&family=Zen+Maru+Gothic:wght@700;900&display=swap" rel="stylesheet">
+  
+  <style>
+    body {
+      font-family: 'Zen Maru Gothic', 'Mochiyom Pop One', sans-serif;
+      background: linear-gradient(135deg, #fff3f8 0%, #e0f2fe 50%, #fef9c3 100%);
+      touch-action: manipulation;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    /* 可愛輕柔動畫 */
+    @keyframes bounce-slow {
+      0%, 100% { transform: translateY(0) scale(1); }
+      50% { transform: translateY(-8px) scale(1.02); }
+    }
+    @keyframes thumb-pop {
+      0% { transform: scale(0) rotate(-20deg); opacity: 0; }
+      50% { transform: scale(1.4) rotate(10deg); opacity: 1; }
+      70% { transform: scale(1) rotate(0deg); opacity: 1; }
+      100% { transform: scale(1) rotate(0deg); opacity: 0; }
+    }
+    @keyframes shake-wrong {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-12px); }
+      40%, 80% { transform: translateX(12px); }
+    }
+
+    .animate-bounce-cute { animation: bounce-slow 2.5s infinite ease-in-out; }
+    .animate-thumb { animation: thumb-pop 1.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+    .animate-shake { animation: shake-wrong 0.4s ease-in-out; }
+
+    /* 立體軟綿綿大按鈕 */
+    .btn-cute {
+      box-shadow: 0 8px 0 0 rgba(0, 0, 0, 0.12), inset 0 4px 0 rgba(255, 255, 255, 0.6);
+      transition: all 0.15s ease;
+    }
+    .btn-cute:active {
+      transform: translateY(5px);
+      box-shadow: 0 3px 0 0 rgba(0, 0, 0, 0.12), inset 0 2px 0 rgba(255, 255, 255, 0.6);
+    }
+
+    /* 答對飛出特效 */
+    .particle {
+      position: absolute;
+      pointer-events: none;
+      animation: particlePop 1.2s forwards ease-out;
+      z-index: 100;
+    }
+    @keyframes particlePop {
+      0% { opacity: 1; transform: translate(-50%, -50%) scale(0.6); }
+      100% { opacity: 0; transform: translate(-50%, -130px) scale(2); }
+    }
+
+    /* 隱藏滾動條但保持可滾動 */
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-between p-3 sm:p-6 overflow-x-hidden relative">
+
+  <!-- 頂部標題與音量開關 -->
+  <header class="w-full max-w-4xl flex items-center justify-between bg-white/85 backdrop-blur-md rounded-3xl p-4 sm:p-5 shadow-xl border-4 border-pink-200 mb-4">
+    <div class="flex items-center space-x-3">
+      <div class="text-5xl sm:text-6xl animate-bounce-cute">🐱</div>
+      <div>
+        <h1 class="text-3xl sm:text-5xl font-black text-pink-500 tracking-wider drop-shadow-sm">
+          可愛聽音找找樂園
+        </h1>
+        <p class="text-lg sm:text-2xl text-purple-600 font-bold">大圖大字 ‧ 護眼語言訓練 💖</p>
+      </div>
+    </div>
+
+    <div class="flex items-center space-x-3">
+      <button id="soundBtn" onclick="toggleSound()" class="btn-cute bg-amber-300 hover:bg-amber-400 text-amber-950 font-black p-4 rounded-3xl border-4 border-amber-400 flex items-center justify-center">
+        <i id="soundIcon" class="fas fa-volume-up text-3xl sm:text-4xl"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- 8 大主題切換選單（滑動式橫向排版與多欄網格） -->
+  <nav class="w-full max-w-4xl grid grid-cols-2 sm:grid-cols-4 gap-3 mb-4">
+    <button onclick="switchTab('number')" id="tab-number" class="btn-cute bg-pink-500 text-white font-black text-lg sm:text-2xl py-3 rounded-3xl border-4 border-pink-300 flex items-center justify-center space-x-2">
+      <span class="text-2xl sm:text-3xl">🔢</span>
+      <span>數字 1-10</span>
+    </button>
+    <button onclick="switchTab('animals')" id="tab-animals" class="btn-cute bg-white text-gray-800 font-black text-lg sm:text-2xl py-3 rounded-3xl border-4 border-purple-200 flex items-center justify-center space-x-2">
+      <span class="text-2xl sm:text-3xl">🐶</span>
+      <span>可愛動物</span>
+    </button>
+    <button onclick="switchTab('food')" id="tab-food" class="btn-cute bg-white text-gray-800 font-black text-lg sm:text-2xl py-3 rounded-3xl border-4 border-emerald-200 flex items-center justify-center space-x-2">
+      <span class="text-2xl sm:text-3xl">🍎</span>
+      <span>美味食物</span>
+    </button>
+    <button onclick="switchTab('vehicles')" id="tab-vehicles" class="btn-cute bg-white text-gray-800 font-black text-lg sm:text-2xl py-3 rounded-3xl border-4 border-blue-200 flex items-center justify-center space-x-2">
+      <span class="text-2xl sm:text-3xl">🚗</span>
+      <span>交通工具</span>
+    </button>
+    <button onclick="switchTab('toys')" id="tab-toys" class="btn-cute bg-white text-gray-800 font-black text-lg sm:text-2xl py-3 rounded-3xl border-4 border-amber-200 flex items-center justify-center space-x-2">
+      <span class="text-2xl sm:text-3xl">🧸</span>
+      <span>玩具樂器</span>
+    </button>
+    <button onclick="switchTab('body')" id="tab-body" class="btn-cute bg-white text-gray-800 font-black text-lg sm:text-2xl py-3 rounded-3xl border-4 border-rose-200 flex items-center justify-center space-x-2">
+      <span class="text-2xl sm:text-3xl">👕</span>
+      <span>身體服飾</span>
+    </button>
+    <button onclick="switchTab('shapes')" id="tab-shapes" class="btn-cute bg-white text-gray-800 font-black text-lg sm:text-2xl py-3 rounded-3xl border-4 border-sky-200 flex items-center justify-center space-x-2">
+      <span class="text-2xl sm:text-3xl">🎨</span>
+      <span>顏色形狀</span>
+    </button>
+    <button onclick="switchTab('nature')" id="tab-nature" class="btn-cute bg-white text-gray-800 font-black text-lg sm:text-2xl py-3 rounded-3xl border-4 border-teal-200 flex items-center justify-center space-x-2">
+      <span class="text-2xl sm:text-3xl">🌻</span>
+      <span>自然植物</span>
+    </button>
+  </nav>
+
+  <!-- 主要遊戲互動區域 -->
+  <main class="w-full max-w-4xl flex-1 bg-white/90 rounded-3xl p-4 sm:p-6 shadow-2xl border-4 border-pink-100 flex flex-col items-center justify-between relative min-h-[520px]">
+
+    <!-- 答對時的透明大拇指提示（位於右上角，絕對不擋住下方卡片） -->
+    <div id="thumb-feedback" class="absolute top-2 right-4 pointer-events-none hidden z-30">
+      <div class="text-7xl sm:text-9xl animate-thumb filter drop-shadow-lg">👍</div>
+    </div>
+
+    <!-- 題目提示與超大再聽一次按鈕 -->
+    <div class="w-full max-w-2xl bg-gradient-to-r from-pink-100 via-purple-100 to-sky-100 rounded-3xl p-4 border-4 border-purple-200 shadow-md flex flex-col items-center text-center">
+      <div class="text-2xl sm:text-3xl font-black text-purple-900 mb-2 flex items-center justify-center gap-2 flex-wrap">
+        <span>請聽聲音找找看：</span>
+        <span id="target-title-text" class="text-4xl sm:text-5xl text-pink-600 font-black underline decoration-wavy decoration-pink-400">【？】</span>
+      </div>
+      
+      <button onclick="playPromptSound()" class="btn-cute bg-yellow-300 hover:bg-yellow-400 text-yellow-950 font-black text-2xl sm:text-3xl px-8 py-3 rounded-2xl border-4 border-yellow-400 flex items-center gap-3 animate-pulse mt-1">
+        <i class="fas fa-volume-up text-3xl sm:text-4xl"></i>
+        <span>再聽一次聲音 🔊</span>
+      </button>
+    </div>
+
+    <!-- 巨型選項區（2x2 矩陣，保護眼睛大觸控面） -->
+    <div id="options-grid" class="grid grid-cols-2 gap-4 sm:gap-6 w-full max-w-2xl my-4">
+      <!-- 動態生成 4 個超大按鈕卡片 -->
+    </div>
+
+    <!-- 答對計數 -->
+    <div class="text-xl sm:text-2xl font-black text-emerald-600">
+      好棒👍！你已經答對 <span id="score-count" class="text-3xl sm:text-4xl text-pink-500 font-black">0</span> 題囉！🌟
+    </div>
+
+  </main>
+
+  <!-- 底部保護眼睛提示 -->
+  <footer class="w-full max-w-4xl text-center mt-4">
+    <div class="bg-white/70 backdrop-blur-sm rounded-2xl p-3 border-2 border-pink-200 shadow-sm inline-block">
+      <p class="text-xl sm:text-2xl font-black text-purple-700">
+        ✨ 玩遊戲要記得跟螢幕保持距離，保護亮晶晶的眼睛喔！ ✨
+      </p>
+    </div>
+  </footer>
+
+  <script>
+    /* ==========================================
+       全域聲音與音效控制（專為語言訓練優化）
+       ========================================== */
+    let isSoundOn = true;
+    let synth = window.speechSynthesis;
+
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    function playBeep(freq = 520, duration = 0.15, type = 'sine') {
+      if (!isSoundOn) return;
+      try {
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+      } catch (e) {}
+    }
+
+    function playHappyFanfare() {
+      if (!isSoundOn) return;
+      const notes = [392, 523, 659, 784, 1046];
+      notes.forEach((freq, index) => {
+        setTimeout(() => playBeep(freq, 0.18, 'triangle'), index * 90);
+      });
+    }
+
+    // 清晰朗讀語音（語速較慢、音調溫和）
+    function speakText(text, callback) {
+      if (!isSoundOn || !synth) {
+        if (callback) callback();
+        return;
+      }
+      synth.cancel();
+      const utterance = new SpeechSynthesisUtterance(text);
+      utterance.lang = 'zh-TW';
+      utterance.rate = 0.75; // 放慢語速，方便語言遲緩孩童辨識音素
+      utterance.pitch = 1.2;
+      if (callback) {
+        utterance.onend = callback;
+      }
+      synth.speak(utterance);
+    }
+
+    /* ==========================================
+       8 大主題豐富資料庫
+       ========================================== */
+    const database = {
+      // 1. 🔢 數字 1-10 專用教學資料庫
+      number: [
+        { num: 1, name: '數字 1', speechName: '數字 1，一個蘋果', emoji: '🍎', displayItems: '🍎', color: 'bg-red-100 border-red-300' },
+        { num: 2, name: '數字 2', speechName: '數字 2，兩隻小鴨', emoji: '🦆', displayItems: '🦆🦆', color: 'bg-yellow-100 border-yellow-300' },
+        { num: 3, name: '數字 3', speechName: '數字 3，三個氣球', emoji: '🎈', displayItems: '🎈🎈🎈', color: 'bg-pink-100 border-pink-300' },
+        { num: 4, name: '數字 4', speechName: '數字 4，四朵小花', emoji: '🌸', displayItems: '🌸🌸🌸🌸', color: 'bg-purple-100 border-purple-300' },
+        { num: 5, name: '數字 5', speechName: '數字 5，五隻小雞', emoji: '🐥', displayItems: '🐥🐥🐥🐥🐥', color: 'bg-amber-100 border-amber-300' },
+        { num: 6, name: '數字 6', speechName: '數字 6，六顆草莓', emoji: '🍓', displayItems: '🍓🍓🍓🍓🍓🍓', color: 'bg-rose-100 border-rose-300' },
+        { num: 7, name: '數字 7', speechName: '數字 7，七顆星星', emoji: '⭐', displayItems: '⭐⭐⭐⭐⭐⭐⭐', color: 'bg-amber-100 border-amber-400' },
+        { num: 8, name: '數字 8', speechName: '數字 8，八條小魚', emoji: '🐟', displayItems: '🐟🐟🐟🐟🐟🐟🐟🐟', color: 'bg-sky-100 border-sky-300' },
+        { num: 9, name: '數字 9', speechName: '數字 9，九個糖果', emoji: '🍬', displayItems: '🍬🍬🍬🍬🍬🍬🍬🍬🍬', color: 'bg-teal-100 border-teal-300' },
+        { num: 10, name: '數字 10', speechName: '數字 10，十顆愛心', emoji: '💖', displayItems: '💖💖💖💖💖💖💖💖💖💖', color: 'bg-red-100 border-red-400' }
+      ],
+
+      // 2. 🐶 可愛動物
+      animals: [
+        { name: '小狗', speechName: '小狗', emoji: '🐶', color: 'bg-amber-100 border-amber-300' },
+        { name: '小貓', speechName: '小貓', emoji: '🐱', color: 'bg-orange-100 border-orange-300' },
+        { name: '大象', speechName: '大象', emoji: '🐘', color: 'bg-sky-100 border-sky-300' },
+        { name: '青蛙', speechName: '青蛙', emoji: '🐸', color: 'bg-emerald-100 border-emerald-300' },
+        { name: '兔子', speechName: '兔子', emoji: '🐰', color: 'bg-pink-100 border-pink-300' },
+        { name: '獅子', speechName: '獅子', emoji: '🦁', color: 'bg-yellow-100 border-yellow-300' },
+        { name: '大熊貓', speechName: '大熊貓', emoji: '🐼', color: 'bg-emerald-100 border-emerald-300' },
+        { name: '企鵝', speechName: '企鵝', emoji: '🐧', color: 'bg-indigo-100 border-indigo-300' },
+        { name: '無尾熊', speechName: '無尾熊', emoji: '🐨', color: 'bg-slate-100 border-slate-300' },
+        { name: '猴子', speechName: '猴子', emoji: '🐒', color: 'bg-yellow-100 border-yellow-400' }
+      ],
+
+      // 3. 🍎 美味食物
+      food: [
+        { name: '蘋果', speechName: '蘋果', emoji: '🍎', color: 'bg-red-100 border-red-300' },
+        { name: '香蕉', speechName: '香蕉', emoji: '🍌', color: 'bg-yellow-100 border-yellow-300' },
+        { name: '草莓', speechName: '草莓', emoji: '🍓', color: 'bg-pink-100 border-pink-300' },
+        { name: '西瓜', speechName: '西瓜', emoji: '🍉', color: 'bg-emerald-100 border-emerald-300' },
+        { name: '牛奶', speechName: '牛奶', emoji: '🥛', color: 'bg-blue-100 border-blue-300' },
+        { name: '甜甜圈', speechName: '甜甜圈', emoji: '🍩', color: 'bg-amber-100 border-amber-300' },
+        { name: '漢堡', speechName: '漢堡', emoji: '🍔', color: 'bg-orange-100 border-orange-300' },
+        { name: '冰淇淋', speechName: '冰淇淋', emoji: '🍦', color: 'bg-purple-100 border-purple-300' },
+        { name: '披薩', speechName: '披薩', emoji: '🍕', color: 'bg-yellow-100 border-yellow-400' },
+        { name: '飯糰', speechName: '飯糰', emoji: '🍙', color: 'bg-teal-100 border-teal-300' }
+      ],
+
+      // 4. 🚗 交通工具
+      vehicles: [
+        { name: '汽車', speechName: '汽車', emoji: '🚗', color: 'bg-red-100 border-red-300' },
+        { name: '公車', speechName: '公車', emoji: '🚌', color: 'bg-yellow-100 border-yellow-300' },
+        { name: '飛機', speechName: '飛機', emoji: '✈️', color: 'bg-sky-100 border-sky-300' },
+        { name: '火車', speechName: '火車', emoji: '🚂', color: 'bg-purple-100 border-purple-300' },
+        { name: '警車', speechName: '警車', emoji: '🚓', color: 'bg-blue-100 border-blue-300' },
+        { name: '自行車', speechName: '自行車', emoji: '🚲', color: 'bg-emerald-100 border-emerald-300' },
+        { name: '輪船', speechName: '輪船', emoji: '🚢', color: 'bg-teal-100 border-teal-300' },
+        { name: '火箭', speechName: '火箭', emoji: '🚀', color: 'bg-orange-100 border-orange-300' },
+        { name: '消防車', speechName: '消防車', emoji: '🚒', color: 'bg-red-100 border-red-400' },
+        { name: '救護車', speechName: '救護車', emoji: '🚑', color: 'bg-emerald-100 border-emerald-400' }
+      ],
+
+      // 5. 🧸 玩具樂器
+      toys: [
+        { name: '積木', speechName: '積木', emoji: '🧱', color: 'bg-red-100 border-red-300' },
+        { name: '洋娃娃', speechName: '洋娃娃', emoji: '🪆', color: 'bg-pink-100 border-pink-300' },
+        { name: '皮球', speechName: '皮球', emoji: '⚽', color: 'bg-emerald-100 border-emerald-300' },
+        { name: '機器人', speechName: '機器人', emoji: '🤖', color: 'bg-sky-100 border-sky-300' },
+        { name: '鋼琴', speechName: '鋼琴', emoji: '🎹', color: 'bg-slate-100 border-slate-300' },
+        { name: '爵士鼓', speechName: '爵士鼓', emoji: '🥁', color: 'bg-yellow-100 border-yellow-300' },
+        { name: '吉他', speechName: '吉他', emoji: '🎸', color: 'bg-amber-100 border-amber-300' },
+        { name: '泰迪熊', speechName: '泰迪熊', emoji: '🧸', color: 'bg-orange-100 border-orange-300' },
+        { name: '氣球', speechName: '氣球', emoji: '🎈', color: 'bg-rose-100 border-rose-300' },
+        { name: '小喇叭', speechName: '小喇叭', emoji: '🎺', color: 'bg-amber-100 border-amber-400' }
+      ],
+
+      // 6. 👕 身體服飾
+      body: [
+        { name: '帽子', speechName: '帽子', emoji: '🧢', color: 'bg-blue-100 border-blue-300' },
+        { name: '上衣', speechName: '上衣', emoji: '👕', color: 'bg-sky-100 border-sky-300' },
+        { name: '褲子', speechName: '褲子', emoji: '👖', color: 'bg-indigo-100 border-indigo-300' },
+        { name: '鞋子', speechName: '鞋子', emoji: '👟', color: 'bg-amber-100 border-amber-300' },
+        { name: '襪子', speechName: '襪子', emoji: '🧦', color: 'bg-pink-100 border-pink-300' },
+        { name: '眼睛', speechName: '眼睛', emoji: '👀', color: 'bg-yellow-100 border-yellow-300' },
+        { name: '耳朵', speechName: '耳朵', emoji: '👂', color: 'bg-orange-100 border-orange-300' },
+        { name: '鼻子', speechName: '鼻子', emoji: '👃', color: 'bg-rose-100 border-rose-300' },
+        { name: '嘴巴', speechName: '嘴巴', emoji: '👄', color: 'bg-red-100 border-red-300' },
+        { name: '小手', speechName: '小手', emoji: '✋', color: 'bg-emerald-100 border-emerald-300' }
+      ],
+
+      // 7. 🎨 顏色形狀 (修正：藍色菱形 🔷、紫色正方形 🟪、紫色圓形 🟣、紫色愛心 💜)
+      shapes: [
+        { name: '紅色愛心', speechName: '紅色愛心', emoji: '❤️', color: 'bg-red-100 border-red-300' },
+        { name: '黃色星星', speechName: '黃色星星', emoji: '⭐', color: 'bg-yellow-100 border-yellow-300' },
+        { name: '藍色正方形', speechName: '藍色正方形', emoji: '🟦', color: 'bg-blue-100 border-blue-300' },
+        { name: '藍色菱形', speechName: '藍色菱形', emoji: '🔷', color: 'bg-blue-100 border-blue-300' },
+        { name: '綠色圓形', speechName: '綠色圓形', emoji: '🟢', color: 'bg-emerald-100 border-emerald-300' },
+        { name: '橘色三角形', speechName: '橘色三角形', emoji: '🔺', color: 'bg-orange-100 border-orange-300' },
+        { name: '紫色正方形', speechName: '紫色正方形', emoji: '🟪', color: 'bg-purple-100 border-purple-300' },
+        { name: '紫色圓形', speechName: '紫色圓形', emoji: '🟣', color: 'bg-purple-100 border-purple-300' },
+        { name: '紫色愛心', speechName: '紫色愛心', emoji: '💜', color: 'bg-purple-100 border-purple-300' },
+        { name: '粉紅愛心', speechName: '粉紅愛心', emoji: '💖', color: 'bg-pink-100 border-pink-300' },
+        { name: '黃色圓圈', speechName: '黃色圓圈', emoji: '🟡', color: 'bg-amber-100 border-amber-300' }
+      ],
+
+      // 8. 🌻 自然植物
+      nature: [
+        { name: '太陽', speechName: '太陽', emoji: '☀️', color: 'bg-amber-100 border-amber-300' },
+        { name: '月亮', speechName: '月亮', emoji: '🌙', color: 'bg-yellow-100 border-yellow-300' },
+        { name: '彩虹', speechName: '彩虹', emoji: '🌈', color: 'bg-pink-100 border-pink-300' },
+        { name: '雲朵', speechName: '雲朵', emoji: '☁️', color: 'bg-sky-100 border-sky-300' },
+        { name: '雨滴', speechName: '雨滴', emoji: '💧', color: 'bg-blue-100 border-blue-300' },
+        { name: '花朵', speechName: '花朵', emoji: '🌸', color: 'bg-rose-100 border-rose-300' },
+        { name: '大樹', speechName: '大樹', emoji: '🌳', color: 'bg-emerald-100 border-emerald-300' },
+        { name: '樹葉', speechName: '樹葉', emoji: '🍃', color: 'bg-teal-100 border-teal-300' },
+        { name: '向日葵', speechName: '向日葵', emoji: '🌻', color: 'bg-orange-100 border-orange-300' },
+        { name: '蘑菇', speechName: '蘑菇', emoji: '🍄', color: 'bg-red-100 border-red-300' }
+      ]
+    };
+
+    let currentCategory = 'number';
+    let currentTargetItem = null;
+    let totalScore = 0;
+
+    /* ==========================================
+       遊戲核心邏輯
+       ========================================== */
+    function switchTab(catKey) {
+      currentCategory = catKey;
+      playBeep(550, 0.1);
+
+      // 切換按鈕亮起狀態
+      document.querySelectorAll('nav button').forEach(btn => {
+        btn.classList.remove('bg-pink-500', 'text-white');
+        btn.classList.add('bg-white', 'text-gray-800');
+      });
+
+      const activeBtn = document.getElementById(`tab-${catKey}`);
+      if (activeBtn) {
+        activeBtn.classList.remove('bg-white', 'text-gray-800');
+        activeBtn.classList.add('bg-pink-500', 'text-white');
+      }
+
+      generateQuestion();
+    }
+
+    function generateQuestion() {
+      const itemsList = database[currentCategory];
+      
+      // 隨機選取 4 個不重複項目
+      const shuffled = [...itemsList].sort(() => Math.random() - 0.5);
+      const selectedFour = shuffled.slice(0, 4);
+
+      // 決定正確目標
+      currentTargetItem = selectedFour[Math.floor(Math.random() * selectedFour.length)];
+
+      // 更新主畫面題目文字
+      document.getElementById('target-title-text').innerText = `【${currentTargetItem.name}】`;
+
+      // 渲染選項 grid (2x2)
+      const grid = document.getElementById('options-grid');
+      grid.innerHTML = '';
+
+      selectedFour.forEach(item => {
+        const btn = document.createElement('button');
+        btn.className = `btn-cute ${item.color} rounded-3xl p-4 sm:p-6 border-4 flex flex-col items-center justify-center transform active:scale-95 transition-all shadow-xl min-h-[170px] sm:min-h-[210px]`;
+
+        if (currentCategory === 'number') {
+          // 數字模式：呈現【阿拉伯數字 + 實物圖案數量】
+          btn.innerHTML = `
+            <div class="flex items-center justify-center gap-2 mb-1">
+              <span class="text-5xl sm:text-7xl font-black text-purple-900">${item.num}</span>
+            </div>
+            <div class="text-2xl sm:text-3xl tracking-widest break-all px-2 line-clamp-2">${item.displayItems}</div>
+            <span class="text-xl sm:text-2xl font-black text-gray-700 mt-2">${item.name}</span>
+          `;
+        } else {
+          // 一般認知模式
+          btn.innerHTML = `
+            <span class="text-7xl sm:text-8xl drop-shadow-md">${item.emoji}</span>
+            <span class="text-2xl sm:text-3xl font-black text-gray-800 mt-2">${item.name}</span>
+          `;
+        }
+
+        btn.onclick = (e) => checkAnswer(item, btn, e);
+        grid.appendChild(btn);
+      });
+
+      // 發出語音提示
+      setTimeout(() => {
+        playPromptSound();
+      }, 300);
+    }
+
+    function playPromptSound() {
+      if (currentTargetItem) {
+        if (currentCategory === 'number') {
+          speakText(`請找出：${currentTargetItem.speechName}`);
+        } else {
+          speakText(`請找出：${currentTargetItem.name}`);
+        }
+      }
+    }
+
+    function checkAnswer(item, btnElement, event) {
+      if (item.name === currentTargetItem.name) {
+        // 答對了！
+        totalScore++;
+        document.getElementById('score-count').innerText = totalScore;
+
+        playHappyFanfare();
+        createParticles(event.clientX, event.clientY);
+
+        // 顯示不擋畫面的右上角大拇指👍
+        showThumbFeedback();
+
+        // 正向語音回饋「好棒👍！」
+        speakText(`好棒👍！找到了 ${item.name}！`, () => {
+          setTimeout(() => {
+            generateQuestion();
+          }, 800);
+        });
+
+      } else {
+        // 點錯提示
+        btnElement.classList.add('animate-shake');
+        playBeep(220, 0.25, 'sawtooth');
+        speakText(`這是${item.name}，再試試看喔！`);
+        setTimeout(() => {
+          btnElement.classList.remove('animate-shake');
+        }, 500);
+      }
+    }
+
+    // 右上角不擋畫面的大拇指👍動畫
+    function showThumbFeedback() {
+      const thumb = document.getElementById('thumb-feedback');
+      thumb.classList.remove('hidden');
+      setTimeout(() => {
+        thumb.classList.add('hidden');
+      }, 1200);
+    }
+
+    function createParticles(x, y) {
+      const icons = ['✨', '💖', '🌟', '🎉', '🎈'];
+      for (let i = 0; i < 6; i++) {
+        const p = document.createElement('div');
+        p.className = 'particle text-4xl sm:text-5xl font-black';
+        p.innerText = icons[Math.floor(Math.random() * icons.length)];
+        p.style.left = (x + (Math.random() * 80 - 40)) + 'px';
+        p.style.top = (y + (Math.random() * 80 - 40)) + 'px';
+        document.body.appendChild(p);
+        setTimeout(() => p.remove(), 1200);
+      }
+    }
+
+    function toggleSound() {
+      isSoundOn = !isSoundOn;
+      const soundIcon = document.getElementById('soundIcon');
+      if (isSoundOn) {
+        soundIcon.className = 'fas fa-volume-up text-3xl sm:text-4xl';
+        playBeep(600, 0.1);
+        speakText('聲音開啟');
+      } else {
+        soundIcon.className = 'fas fa-volume-mute text-3xl sm:text-4xl text-gray-400';
+        if (synth) synth.cancel();
+      }
+    }
+
+    window.onload = () => {
+      switchTab('number'); // 預設開啟數字 1-10 教學找找看
+    };
+  </script>
+</body>
+</html>
+

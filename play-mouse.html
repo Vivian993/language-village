@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>快樂打地鼠</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&family=Baloo+2:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --cream:#F1EAE0;
+    --cream-deep:#E4DACB;
+    --soil:#8A7362;
+    --soil-dark:#5B4A3E;
+    --grass:#95A489;
+    --grass-dark:#728065;
+    --ink:#5A4B3F;
+    --white:#FFFBF5;
+    --clay:#C97B63;
+    --gold:#D9B65E;
+    --sage:#8FA888;
+    --blue:#7F9BB0;
+    --purple:#A48CA6;
+    --pink:#D3A0A8;
+    --shadow: 0 6px 0 rgba(90,75,63,0.18);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color: transparent; user-select:none;}
+  html,body{height:100%; margin:0; overflow:hidden; touch-action: manipulation;}
+  body{
+    font-family:'ZCOOL KuaiLe','Baloo 2',sans-serif;
+    background: var(--cream);
+    color: var(--ink);
+  }
+  #app{height:100vh; height:100dvh; width:100vw; position:relative; overflow:hidden;}
+  .screen{
+    position:absolute; inset:0;
+    display:none; flex-direction:column;
+    height:100%; width:100%;
+  }
+  .screen.active{display:flex;}
+
+  /* ---------- decorative ambient blobs ---------- */
+  .blob{position:absolute; border-radius:50%; opacity:0.5; filter:blur(1px); pointer-events:none;}
+
+  /* ---------- MUTE BUTTON ---------- */
+  .mute-btn{
+    position:absolute; top:clamp(10px,2vw,18px); right:clamp(10px,2vw,18px);
+    z-index:50; width:clamp(44px,8vw,58px); height:clamp(44px,8vw,58px);
+    border-radius:50%; border:none; background:var(--white);
+    box-shadow: var(--shadow);
+    font-size:clamp(20px,4vw,28px); display:flex; align-items:center; justify-content:center;
+    cursor:pointer;
+  }
+  .mute-btn:active{transform:translateY(4px); box-shadow:none;}
+
+  /* ================= MENU SCREEN ================= */
+  #screen-menu{
+    align-items:center; justify-content:flex-start;
+    padding: clamp(16px,4vh,32px) clamp(14px,4vw,30px);
+    background: radial-gradient(circle at 20% 10%, #F7F1E6, var(--cream) 60%);
+    overflow-y:auto;
+  }
+  .menu-header{text-align:center; margin-bottom: clamp(10px,2vh,20px); flex-shrink:0;}
+  .title{
+    font-size:clamp(30px,7vw,54px); margin:0; color:var(--clay);
+    text-shadow: 2px 3px 0 rgba(0,0,0,0.08);
+  }
+  .subtitle{font-size:clamp(15px,3vw,20px); margin:6px 0 0; color:var(--ink); opacity:0.75;}
+  .voice-toggle{
+    margin-top:10px; display:inline-flex; align-items:center; gap:8px;
+    background:var(--white); padding:8px 16px; border-radius:999px; box-shadow:var(--shadow);
+    font-size:clamp(13px,2.6vw,16px); cursor:pointer;
+  }
+  .level-grid{
+    display:grid; grid-template-columns: repeat(2, 1fr);
+    gap: clamp(10px,2.5vw,18px);
+    width:100%; max-width:720px; margin: 0 auto; padding-bottom:16px;
+  }
+  @media (min-width:640px){ .level-grid{grid-template-columns: repeat(3,1fr);} }
+  .level-card{
+    border:none; border-radius:26px; padding: clamp(14px,3vw,22px) 8px;
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px;
+    cursor:pointer; box-shadow: var(--shadow);
+    transition: transform .08s;
+    aspect-ratio: 1/0.85;
+  }
+  .level-card:active{transform: translateY(5px); box-shadow:none;}
+  .level-card .emoji{font-size:clamp(34px,8vw,54px); line-height:1;}
+  .level-card .lbl{font-size:clamp(15px,3.2vw,20px); font-weight:700; color:var(--ink);}
+
+  /* ================= GAME SCREEN ================= */
+  #screen-game{ transition: background .5s ease; }
+  .game-top{
+    flex-shrink:0; display:flex; align-items:center; justify-content:space-between;
+    padding: clamp(8px,2vh,14px) clamp(12px,3vw,22px);
+    gap:8px;
+  }
+  .btn-back{
+    border:none; background:var(--white); border-radius:999px;
+    padding: 8px 16px; font-size:clamp(14px,2.8vw,18px); font-family:inherit; font-weight:700;
+    box-shadow:var(--shadow); cursor:pointer; color:var(--ink);
+  }
+  .btn-back:active{transform:translateY(4px); box-shadow:none;}
+  .game-title{font-size:clamp(16px,3.6vw,26px); font-weight:700; color:var(--ink); text-align:center; flex:1;}
+  .game-stats{display:flex; gap:8px;}
+  .stat{
+    background:var(--white); border-radius:999px; padding:6px 14px;
+    font-size:clamp(15px,3.2vw,22px); font-weight:700; box-shadow:var(--shadow);
+    display:flex; align-items:center; gap:4px; min-width:60px; justify-content:center;
+  }
+  .timebar-wrap{flex-shrink:0; padding: 0 clamp(12px,3vw,22px) 8px;}
+  .timebar{height:10px; border-radius:999px; background:rgba(0,0,0,0.08); overflow:hidden;}
+  .timebar-fill{height:100%; background:var(--clay); width:100%; transition: width 1s linear, background .3s;}
+
+  .instruction-bar{
+    flex-shrink:0; display:flex; align-items:center; justify-content:center; gap:12px;
+    padding: 2px clamp(14px,4vw,26px) 12px; flex-wrap:wrap;
+  }
+  .instruction-badge{
+    width:clamp(42px,9vw,62px); height:clamp(42px,9vw,62px); border-radius:50%;
+    display:flex; align-items:center; justify-content:center; box-shadow:var(--shadow);
+    color:#fff; overflow:hidden; flex-shrink:0; background:var(--white);
+  }
+  .instruction-text{font-size:clamp(18px,4.4vw,30px); font-weight:700; color:var(--clay); text-align:center;}
+  .replay-btn{
+    border:none; background:var(--white); border-radius:999px; padding:8px 16px;
+    font-size:clamp(13px,2.8vw,17px); font-weight:700; box-shadow:var(--shadow); cursor:pointer; color:var(--ink);
+    flex-shrink:0;
+  }
+  .replay-btn:active{transform:translateY(3px); box-shadow:none;}
+
+  .board{
+    flex:1; min-height:0;
+    display:grid; grid-template-columns:repeat(3,1fr); grid-template-rows:repeat(3,1fr);
+    gap: clamp(6px,1.6vw,14px);
+    padding: clamp(6px,1.6vw,14px) clamp(10px,2.6vw,20px) clamp(14px,3vh,26px);
+  }
+  .hole{
+    position:relative; border-radius:50%;
+    background: radial-gradient(ellipse at 50% 40%, var(--soil) 0%, var(--soil-dark) 75%);
+    box-shadow: inset 0 8px 14px rgba(0,0,0,0.35), 0 6px 0 rgba(0,0,0,0.06);
+    overflow:hidden;
+    display:flex; align-items:flex-end; justify-content:center;
+  }
+  .hole::before{
+    content:''; position:absolute; top:-6%; left:-4%; right:-4%; height:38%;
+    background: var(--grass);
+    border-radius: 50%;
+    box-shadow: 0 4px 0 var(--grass-dark);
+  }
+  .mole{
+    position:absolute; bottom:-100%; left:50%;
+    transform: translate(-50%, 0);
+    width:78%; aspect-ratio:1/1;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    border-radius: 46% 46% 50% 50% / 55% 55% 45% 45%;
+    cursor:pointer;
+    transition: bottom .18s cubic-bezier(.34,1.56,.64,1);
+    z-index:2;
+  }
+  .mole.up{ bottom:6%; }
+  .mole.hit{ transition: transform .18s ease, opacity .18s ease; transform: translate(-50%,0) scale(0.5); opacity:0; }
+  .mole.retreat{ bottom:-100%; }
+  .mole.shake{ animation: moleShake .4s; }
+  @keyframes moleShake{
+    0%,100%{transform:translate(-50%,0);}
+    20%{transform:translate(calc(-50% - 8px),0);}
+    40%{transform:translate(calc(-50% + 8px),0);}
+    60%{transform:translate(calc(-50% - 6px),0);}
+    80%{transform:translate(calc(-50% + 6px),0);}
+  }
+  .mole-ears{position:absolute; top:-6%; width:100%; display:flex; justify-content:space-between; padding:0 8%;}
+  .mole-ears span{
+    width:22%; aspect-ratio:1/1; border-radius:50%;
+    background:inherit; filter:brightness(0.92);
+  }
+  .mole-face{position:absolute; top:32%; width:100%; display:flex; justify-content:center; gap:18%;}
+  .eye{width:11%; aspect-ratio:1/1; background:var(--ink); border-radius:50%; position:relative;}
+  .eye::after{content:''; position:absolute; top:15%; left:15%; width:35%; height:35%; background:#fff; border-radius:50%;}
+  .cheek{position:absolute; width:13%; aspect-ratio:1/1; border-radius:50%; background:rgba(211,110,90,0.35); top:46%;}
+  .cheek.left{left:8%;} .cheek.right{right:8%;}
+  .mole-content{
+    position:relative; z-index:2; display:flex; align-items:center; justify-content:center;
+    font-weight:800; color:var(--white);
+    width:100%;
+  }
+  .mole-label{
+    position:absolute; bottom:-6%; left:50%; transform:translate(-50%,0);
+    background:var(--white); color:var(--ink); font-weight:700;
+    padding: 2px 12px; border-radius:999px; white-space:nowrap;
+    font-size:clamp(11px,2.4vw,16px); box-shadow:var(--shadow); z-index:3;
+  }
+
+  /* shape badge */
+  .shape{width:46%; aspect-ratio:1/1; background:var(--gold-shape,var(--white));}
+  .shape-circle{border-radius:50%;}
+  .shape-square{border-radius:14%;}
+  .shape-triangle{clip-path: polygon(50% 4%, 4% 96%, 96% 96%); aspect-ratio:1.05/1;}
+  .shape-star{clip-path: polygon(50% 0%,61% 35%,98% 35%,68% 57%,79% 91%,50% 70%,21% 91%,32% 57%,2% 35%,39% 35%);}
+  .shape-diamond{clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);}
+  .shape-heart{ position:relative; background:none !important; width:50%; aspect-ratio:1.1/1;}
+  .shape-heart::before, .shape-heart::after{
+    content:''; position:absolute; top:0; width:50%; height:88%; background:var(--gold-shape,var(--white)); border-radius:50% 50% 0 0;
+  }
+  .shape-heart::before{left:50%; transform: rotate(-45deg); transform-origin: 0% 100%;}
+  .shape-heart::after{left:0; transform: rotate(45deg); transform-origin: 100% 100%;}
+
+  .praise{
+    position:absolute; z-index:10; font-size:clamp(16px,4vw,26px); font-weight:800;
+    color:var(--clay); pointer-events:none; text-shadow:1px 1px 0 #fff;
+    animation: floatUp .8s ease-out forwards;
+  }
+  @keyframes floatUp{
+    0%{opacity:0; transform: translate(-50%,0) scale(0.6);}
+    30%{opacity:1; transform: translate(-50%,-10px) scale(1.15);}
+    100%{opacity:0; transform: translate(-50%,-60px) scale(1);}
+  }
+
+  /* ================= RESULT SCREEN ================= */
+  #screen-result{align-items:center; justify-content:center; background: radial-gradient(circle at 50% 20%, #F7F1E6, var(--cream) 70%);}
+  .result-card{
+    background:var(--white); border-radius:32px; padding: clamp(24px,6vw,44px) clamp(20px,7vw,50px);
+    text-align:center; box-shadow: var(--shadow); max-width:90vw;
+  }
+  #resultTitle{font-size:clamp(26px,6vw,40px); margin:0 0 8px; color:var(--clay);}
+  .result-stars{font-size:clamp(34px,8vw,56px); margin:8px 0;}
+  #resultScore{font-size:clamp(18px,4vw,26px); margin:0 0 18px; color:var(--ink);}
+  .result-buttons{display:flex; gap:12px; justify-content:center; flex-wrap:wrap;}
+  .result-buttons button{
+    font-family:inherit; font-weight:700; font-size:clamp(15px,3.4vw,20px);
+    border:none; border-radius:999px; padding:12px 22px; cursor:pointer; box-shadow:var(--shadow);
+    color:var(--white);
+  }
+  .result-buttons button:active{transform:translateY(4px); box-shadow:none;}
+  #btnReplay{background:var(--clay);}
+  #btnMenu{background:var(--blue);}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <!-- ===================== 選單畫面 ===================== -->
+  <div id="screen-menu" class="screen active">
+    <button class="mute-btn" id="btnMute">🔊</button>
+    <div class="menu-header">
+      <h1 class="title">🐹 快樂打地鼠 🐹</h1>
+      <p class="subtitle">選一個關卡，開始遊戲吧！</p>
+      <label class="voice-toggle"><input type="checkbox" id="voiceCheck" checked style="width:18px;height:18px;"> 唸出名稱給小朋友聽</label>
+    </div>
+    <div class="level-grid" id="levelGrid"></div>
+  </div>
+
+  <!-- ===================== 遊戲畫面 ===================== -->
+  <div id="screen-game" class="screen">
+    <button class="mute-btn" id="btnMute2">🔊</button>
+    <div class="game-top">
+      <button class="btn-back" id="btnBack">← 返回</button>
+      <div class="game-title" id="gameLevelName"></div>
+      <div class="game-stats">
+        <div class="stat">⭐ <span id="scoreVal">0</span></div>
+        <div class="stat">🎯 <span id="roundVal">1</span>/<span id="roundTotalVal">8</span></div>
+      </div>
+    </div>
+    <div class="instruction-bar">
+      <div class="instruction-badge" id="instructionBadge"></div>
+      <div class="instruction-text" id="instructionText">聽好囉，準備開始！</div>
+      <button class="replay-btn" id="replayInstrBtn">🔁 再聽一次</button>
+    </div>
+    <div class="board" id="board"></div>
+  </div>
+
+  <!-- ===================== 結算畫面 ===================== -->
+  <div id="screen-result" class="screen">
+    <div class="result-card">
+      <h2 id="resultTitle">太棒了！</h2>
+      <div class="result-stars" id="resultStars">⭐⭐⭐</div>
+      <p id="resultScore">得分：0</p>
+      <div class="result-buttons">
+        <button id="btnReplay">🔁 再玩一次</button>
+        <button id="btnMenu">🏠 回選單</button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  /* ---------------------------------------------------------------- */
+  /* 關卡與教材內容設定                                                */
+  /* ---------------------------------------------------------------- */
+  const NUM_WORDS = ['一','二','三','四','五','六','七','八','九','十'];
+  const NUM_COLORS = ['#C97B63','#D9B65E','#8FA888','#7F9BB0','#A48CA6','#D3A0A8','#C9A66B','#9FAEBB','#B49BAA','#7EA6A0'];
+
+  const LEVELS = [
+    {
+      id:'color', name:'顏色關卡', emoji:'🎨', menuBg:'#EADFD3',
+      gameBg: 'linear-gradient(#F1EAE0, #E7DCCB)',
+      sound:{wave:'sine', base:480, extra:null},
+      items:[
+        {name:'紅色', color:'#C97B63'},
+        {name:'黃色', color:'#D9B65E'},
+        {name:'綠色', color:'#8FA888'},
+        {name:'藍色', color:'#7F9BB0'},
+        {name:'紫色', color:'#A48CA6'},
+        {name:'粉紅色', color:'#D3A0A8'},
+      ],
+      render(item){ return {bodyColor:item.color, contentHTML:''}; }
+    },
+    {
+      id:'shape', name:'形狀關卡', emoji:'🔷', menuBg:'#E7DCC8',
+      gameBg:'linear-gradient(#F0E8D8, #E3D6BC)',
+      sound:{wave:'triangle', base:420, extra:null},
+      items:[
+        {name:'圓形', shape:'circle'},
+        {name:'正方形', shape:'square'},
+        {name:'三角形', shape:'triangle'},
+        {name:'星星', shape:'star'},
+        {name:'愛心', shape:'heart'},
+        {name:'菱形', shape:'diamond'},
+      ],
+      render(item){
+        return {bodyColor:'#D8C4A0', contentHTML:`<div class="shape shape-${item.shape}" style="--gold-shape:#B4693F"></div>`};
+      }
+    },
+    {
+      id:'number', name:'數字關卡', emoji:'🔢', menuBg:'#DCE3D4',
+      gameBg:'linear-gradient(#E9EEE3, #D9E2D0)',
+      sound:{wave:'square', base:300, extra:null},
+      items:(function(){ const a=[]; for(let i=1;i<=10;i++) a.push({name:String(i), num:i, chinese:NUM_WORDS[i-1]}); return a; })(),
+      render(item){
+        return {bodyColor:NUM_COLORS[item.num-1], contentHTML:`<span style="font-size:clamp(26px,9vw,48px);">${item.num}</span>`};
+      }
+    },
+    {
+      id:'cny', name:'新年關卡', emoji:'🧧', menuBg:'#E8CFC2',
+      gameBg:'linear-gradient(#F3E2D6, #E8C9B8)',
+      sound:{wave:'sawtooth', base:360, extra:'crackle'},
+      items:[
+        {name:'鞭炮', emoji:'🧨'},
+        {name:'紅包', emoji:'🧧'},
+        {name:'燈籠', emoji:'🏮'},
+        {name:'餃子', emoji:'🥟'},
+        {name:'舞獅', emoji:'🦁'},
+      ],
+      render(item){ return {bodyColor:'#C97B63', contentHTML:`<span style="font-size:clamp(28px,9vw,50px);">${item.emoji}</span>`}; }
+    },
+    {
+      id:'dragonboat', name:'端午關卡', emoji:'🚣', menuBg:'#D9E2D2',
+      gameBg:'linear-gradient(#E5EBDF, #CDDAC4)',
+      sound:{wave:'sine', base:250, extra:'dip'},
+      items:[
+        {name:'粽子', emoji:'🫔'},
+        {name:'龍舟', emoji:'🚣'},
+        {name:'艾草', emoji:'🌿'},
+        {name:'香包', emoji:'👝'},
+      ],
+      render(item){ return {bodyColor:'#8FA888', contentHTML:`<span style="font-size:clamp(28px,9vw,50px);">${item.emoji}</span>`}; }
+    },
+    {
+      id:'midautumn', name:'中秋關卡', emoji:'🌕', menuBg:'#E2D7E6',
+      gameBg:'linear-gradient(#EDE4E0,#3B3552)',
+      sound:{wave:'sine', base:600, extra:'hoo'},
+      items:[
+        {name:'月餅', emoji:'🥮'},
+        {name:'月亮', emoji:'🌕'},
+        {name:'兔子', emoji:'🐰'},
+        {name:'柚子', emoji:'🍈'},
+      ],
+      render(item){ return {bodyColor:'#A48CA6', contentHTML:`<span style="font-size:clamp(28px,9vw,50px);">${item.emoji}</span>`}; }
+    },
+    {
+      id:'xmas', name:'聖誕關卡', emoji:'🎄', menuBg:'#D7E1E8',
+      gameBg:'linear-gradient(#E4EBEF, #C7D6DE)',
+      sound:{wave:'triangle', base:520, extra:'bell'},
+      items:[
+        {name:'聖誕樹', emoji:'🎄'},
+        {name:'聖誕老人', emoji:'🎅'},
+        {name:'禮物', emoji:'🎁'},
+        {name:'雪人', emoji:'⛄'},
+      ],
+      render(item){ return {bodyColor:'#7F9BB0', contentHTML:`<span style="font-size:clamp(28px,9vw,50px);">${item.emoji}</span>`}; }
+    },
+  ];
+
+  /* ---------------------------------------------------------------- */
+  /* 狀態                                                              */
+  /* ---------------------------------------------------------------- */
+  let muted = false;
+  let voiceOn = true;
+  let audioCtx = null;
+  let currentLevel = null;
+  let score = 0;
+  let wrongCount = 0;
+  let roundNum = 1;
+  const ROUNDS_PER_LEVEL = 8;
+  let roundActive = false;
+  let currentRoundTarget = null;
+  let holes = [];
+  let gameActive = false;
+
+  function getCtx(){
+    if(!audioCtx){
+      audioCtx = new (window.AudioContext||window.webkitAudioContext)();
+      // 手機瀏覽器(尤其 iOS Safari)需要在使用者手勢中「播放一次無聲音檔」才能真正解鎖音效
+      try{
+        const buffer = audioCtx.createBuffer(1,1,22050);
+        const src = audioCtx.createBufferSource();
+        src.buffer = buffer;
+        src.connect(audioCtx.destination);
+        src.start(0);
+      }catch(e){}
+    }
+    if(audioCtx.state === 'suspended') audioCtx.resume();
+    return audioCtx;
+  }
+  // 在畫面第一次被觸碰/點擊時就嘗試解鎖音效，確保之後由 setTimeout 觸發的地鼠聲音也能正常播放
+  ['pointerdown','touchstart','click'].forEach(evt=>{
+    document.addEventListener(evt, function unlock(){ getCtx(); }, {once:true});
+  });
+
+  /* ---------------------------------------------------------------- */
+  /* 音效合成                                                          */
+  /* ---------------------------------------------------------------- */
+  // 地鼠冒出來時先發出「叫聲」，提示孩子可以打擊了；聲音會依關卡角色不同而改變
+  function playPop(level, idx, total){
+    if(muted) return;
+    try{
+      const ctx = getCtx();
+      const t0 = ctx.currentTime;
+      const profile = (level && level.sound) ? level.sound : {wave:'sine', base:400};
+      const pitchFactor = (level && total>1) ? 1 + (idx/(total-1))*0.5 : 1;
+      const freq = (profile.base*0.75) * pitchFactor;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = profile.wave;
+      osc.frequency.setValueAtTime(freq*0.7, t0);
+      osc.frequency.exponentialRampToValueAtTime(freq*1.35, t0+0.10);
+      gain.gain.setValueAtTime(0.0001, t0);
+      gain.gain.exponentialRampToValueAtTime(0.4, t0+0.025);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t0+0.2);
+      osc.connect(gain).connect(ctx.destination);
+      osc.start(t0); osc.stop(t0+0.22);
+    }catch(e){}
+  }
+
+  function playNoiseBurst(duration, freq){
+    const ctx = getCtx();
+    const t0 = ctx.currentTime;
+    const bufferSize = ctx.sampleRate * duration;
+    const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for(let i=0;i<bufferSize;i++){ data[i] = (Math.random()*2-1) * (1-i/bufferSize); }
+    const noise = ctx.createBufferSource();
+    noise.buffer = buffer;
+    const bandpass = ctx.createBiquadFilter();
+    bandpass.type = 'bandpass';
+    bandpass.frequency.value = freq;
+    const gain = ctx.createGain();
+    gain.gain.setValueAtTime(0.25, t0);
+    gain.gain.exponentialRampToValueAtTime(0.001, t0+duration);
+    noise.connect(bandpass).connect(gain).connect(ctx.destination);
+    noise.start(t0);
+  }
+
+  function playHit(level, idx, total){
+    if(muted) return;
+    try{
+      const ctx = getCtx();
+      const t0 = ctx.currentTime;
+      const profile = level.sound;
+      const pitchFactor = 1 + (idx/Math.max(total-1,1)) * 0.55;
+      const baseFreq = profile.base * pitchFactor;
+
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = profile.wave;
+      osc.frequency.setValueAtTime(baseFreq, t0);
+      if(profile.extra === 'hoo'){
+        osc.frequency.exponentialRampToValueAtTime(baseFreq*0.7, t0+0.22);
+      } else if(profile.extra === 'dip'){
+        osc.frequency.exponentialRampToValueAtTime(baseFreq*1.3, t0+0.06);
+        osc.frequency.exponentialRampToValueAtTime(baseFreq*0.6, t0+0.22);
+      } else {
+        osc.frequency.exponentialRampToValueAtTime(baseFreq*1.5, t0+0.07);
+        osc.frequency.exponentialRampToValueAtTime(baseFreq*0.75, t0+0.18);
+      }
+      gain.gain.setValueAtTime(0.0001, t0);
+      gain.gain.exponentialRampToValueAtTime(0.45, t0+0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t0+0.28);
+      osc.connect(gain).connect(ctx.destination);
+      osc.start(t0); osc.stop(t0+0.3);
+
+      if(profile.extra === 'bell'){
+        const osc2 = ctx.createOscillator();
+        const gain2 = ctx.createGain();
+        osc2.type = 'sine';
+        osc2.frequency.setValueAtTime(baseFreq*2.4, t0);
+        gain2.gain.setValueAtTime(0.0001, t0);
+        gain2.gain.exponentialRampToValueAtTime(0.15, t0+0.01);
+        gain2.gain.exponentialRampToValueAtTime(0.0001, t0+0.4);
+        osc2.connect(gain2).connect(ctx.destination);
+        osc2.start(t0); osc2.stop(t0+0.42);
+      }
+      if(profile.extra === 'crackle'){
+        playNoiseBurst(0.12, 1800);
+        setTimeout(()=>{ try{ playNoiseBurst(0.08, 2400); }catch(e){} }, 90);
+      }
+    }catch(e){}
+  }
+
+  // 打錯地鼠時的溫和提示音，不會給孩子挫折感
+  function playWrong(){
+    if(muted) return;
+    try{
+      const ctx = getCtx();
+      const t0 = ctx.currentTime;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(320, t0);
+      osc.frequency.exponentialRampToValueAtTime(210, t0+0.18);
+      gain.gain.setValueAtTime(0.0001, t0);
+      gain.gain.exponentialRampToValueAtTime(0.22, t0+0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t0+0.22);
+      osc.connect(gain).connect(ctx.destination);
+      osc.start(t0); osc.stop(t0+0.24);
+    }catch(e){}
+  }
+
+  function speak(text){
+    if(muted || !voiceOn) return;
+    if(!('speechSynthesis' in window)) return;
+    try{
+      window.speechSynthesis.cancel();
+      const u = new SpeechSynthesisUtterance(text);
+      u.lang = 'zh-TW';
+      u.rate = 0.95;
+      u.pitch = 1.15;
+      window.speechSynthesis.speak(u);
+    }catch(e){}
+  }
+
+  /* ---------------------------------------------------------------- */
+  /* 選單畫面建立                                                      */
+  /* ---------------------------------------------------------------- */
+  const levelGrid = document.getElementById('levelGrid');
+  LEVELS.forEach(level=>{
+    const btn = document.createElement('button');
+    btn.className = 'level-card';
+    btn.style.background = level.menuBg;
+    btn.innerHTML = `<span class="emoji">${level.emoji}</span><span class="lbl">${level.name}</span>`;
+    btn.addEventListener('click', ()=>{ getCtx(); startLevel(level); });
+    levelGrid.appendChild(btn);
+  });
+
+  /* ---------------------------------------------------------------- */
+  /* 畫面切換                                                          */
+  /* ---------------------------------------------------------------- */
+  function showScreen(id){
+    document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  }
+
+  /* ---------------------------------------------------------------- */
+  /* 遊戲板建立                                                        */
+  /* ---------------------------------------------------------------- */
+  const boardEl = document.getElementById('board');
+  function buildBoard(){
+    boardEl.innerHTML = '';
+    holes = [];
+    for(let i=0;i<9;i++){
+      const hole = document.createElement('div');
+      hole.className = 'hole';
+      boardEl.appendChild(hole);
+      holes.push({el:hole, mole:null});
+    }
+  }
+
+  /* ---------------------------------------------------------------- */
+  /* 地鼠生成與互動（回合制：先出題，孩子再找出正確的地鼠打下去）           */
+  /* ---------------------------------------------------------------- */
+  const PRAISE_WORDS = ['太棒了!','好棒!','厲害!','讚!','好準!','答對了!'];
+
+  // 把題目的縮小預覽放進題目列的圓形徽章裡
+  function updateInstructionBadge(item){
+    const info = currentLevel.render(item);
+    const badge = document.getElementById('instructionBadge');
+    badge.style.background = info.bodyColor;
+    badge.innerHTML = info.contentHTML
+      ? `<div style="transform:scale(0.55); width:100%; height:100%; display:flex; align-items:center; justify-content:center;">${info.contentHTML}</div>`
+      : '';
+  }
+
+  function placeMole(hole, item, itemIdx, isTarget){
+    const info = currentLevel.render(item);
+    const mole = document.createElement('div');
+    mole.className = 'mole';
+    mole.style.background = info.bodyColor;
+    mole.innerHTML = `
+      <div class="mole-ears"><span></span><span></span></div>
+      <div class="mole-content">${info.contentHTML}</div>
+      <div class="mole-face">
+        <span class="eye"></span><span class="eye"></span>
+        <span class="cheek left"></span><span class="cheek right"></span>
+      </div>
+      <div class="mole-label">${item.name}</div>
+    `;
+    hole.el.appendChild(mole);
+    hole.mole = mole;
+    requestAnimationFrame(()=>{ mole.classList.add('up'); });
+    playPop(currentLevel, itemIdx, currentLevel.items.length);
+
+    const onWhack = (ev)=>{
+      if(!roundActive) return;
+      ev.preventDefault();
+      if(isTarget){
+        roundActive = false;
+        mole.removeEventListener('pointerdown', onWhack);
+        mole.classList.add('hit');
+        playHit(currentLevel, itemIdx, currentLevel.items.length);
+        speak('答對了！');
+        score++;
+        document.getElementById('scoreVal').textContent = score;
+        showPraise(mole);
+        setTimeout(()=>{
+          holes.forEach(h=>{ if(h.mole){ h.el.removeChild(h.mole); h.mole=null; } });
+          roundNum++;
+          nextRound();
+        }, 1100);
+      } else {
+        wrongCount++;
+        mole.classList.add('shake');
+        playWrong();
+        setTimeout(()=>{ mole.classList.remove('shake'); }, 400);
+        setTimeout(()=>{ if(roundActive) speak('再試一次'); }, 500);
+      }
+    };
+    mole.addEventListener('pointerdown', onWhack);
+  }
+
+  function nextRound(){
+    if(!gameActive) return;
+    if(roundNum > ROUNDS_PER_LEVEL){ endLevel(); return; }
+    document.getElementById('roundVal').textContent = roundNum;
+
+    const items = currentLevel.items;
+    const optionCount = Math.min(4, items.length, holes.length);
+    const shuffledItems = [...items].sort(()=>Math.random()-0.5).slice(0, optionCount);
+    const targetItem = shuffledItems[Math.floor(Math.random()*shuffledItems.length)];
+    currentRoundTarget = targetItem;
+
+    const chosenHoles = [...holes].sort(()=>Math.random()-0.5).slice(0, optionCount);
+
+    document.getElementById('instructionText').textContent = `打「${targetItem.name}」的地鼠！`;
+    updateInstructionBadge(targetItem);
+
+    roundActive = true;
+    shuffledItems.forEach((item, i)=>{
+      const idx = items.indexOf(item);
+      placeMole(chosenHoles[i], item, idx, item===targetItem);
+    });
+
+    setTimeout(()=>{ speak(`打${targetItem.name}的地鼠！`); }, 350);
+  }
+
+  function showPraise(mole){
+    if(Math.random() > 0.45) return;
+    const p = document.createElement('div');
+    p.className = 'praise';
+    p.textContent = PRAISE_WORDS[Math.floor(Math.random()*PRAISE_WORDS.length)];
+    p.style.left = '50%';
+    p.style.top = '10%';
+    mole.appendChild(p);
+    setTimeout(()=>{ if(p.parentNode) p.parentNode.removeChild(p); }, 800);
+  }
+
+  /* ---------------------------------------------------------------- */
+  /* 關卡流程                                                          */
+  /* ---------------------------------------------------------------- */
+  function startLevel(level){
+    currentLevel = level;
+    score = 0;
+    wrongCount = 0;
+    roundNum = 1;
+    document.getElementById('scoreVal').textContent = score;
+    document.getElementById('roundVal').textContent = roundNum;
+    document.getElementById('roundTotalVal').textContent = ROUNDS_PER_LEVEL;
+    document.getElementById('gameLevelName').textContent = level.emoji + ' ' + level.name;
+    document.getElementById('screen-game').style.background = level.gameBg;
+    buildBoard();
+    showScreen('screen-game');
+    gameActive = true;
+    nextRound();
+  }
+
+  function endLevel(){
+    gameActive = false;
+    roundActive = false;
+    holes.forEach(h=>{ if(h.mole){ h.el.removeChild(h.mole); h.mole=null; } });
+
+    let stars = 3;
+    if(wrongCount >= 6) stars = 1;
+    else if(wrongCount >= 3) stars = 2;
+
+    document.getElementById('resultTitle').textContent = '太棒了！';
+    document.getElementById('resultStars').textContent = '⭐'.repeat(stars) + '☆'.repeat(3-stars);
+    document.getElementById('resultScore').textContent = `完成 ${ROUNDS_PER_LEVEL} 題，答對 ${score} 次`;
+    showScreen('screen-result');
+  }
+
+  document.getElementById('btnBack').addEventListener('click', ()=>{
+    gameActive = false;
+    roundActive = false;
+    holes.forEach(h=>{ if(h.mole){ h.el.removeChild(h.mole); h.mole=null; } });
+    showScreen('screen-menu');
+  });
+  document.getElementById('btnReplay').addEventListener('click', ()=> startLevel(currentLevel));
+  document.getElementById('btnMenu').addEventListener('click', ()=> showScreen('screen-menu'));
+  document.getElementById('replayInstrBtn').addEventListener('click', ()=>{
+    if(currentRoundTarget) speak(`打${currentRoundTarget.name}的地鼠！`);
+  });
+
+  /* ---------------------------------------------------------------- */
+  /* 靜音 / 語音開關                                                    */
+  /* ---------------------------------------------------------------- */
+  function updateMuteIcon(){
+    document.getElementById('btnMute').textContent = muted ? '🔇' : '🔊';
+    document.getElementById('btnMute2').textContent = muted ? '🔇' : '🔊';
+  }
+  document.getElementById('btnMute').addEventListener('click', ()=>{ muted=!muted; updateMuteIcon(); });
+  document.getElementById('btnMute2').addEventListener('click', ()=>{ muted=!muted; updateMuteIcon(); });
+  document.getElementById('voiceCheck').addEventListener('change', (e)=>{ voiceOn = e.target.checked; });
+
+})();
+</script>
+</body>
+</html>

@@ -4,8 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>快樂打地鼠</title>
-<!-- 📌 iPhone 桌面 App 圖示：它會去抓您上傳到 GitHub 的 custom-icon.png 照片 --> <link rel="apple-touch-icon" href="custom-icon.png">
-<link rel="icon" type="image/png" href="custom-icon.png">  
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&family=Baloo+2:wght@500;700;800&display=swap" rel="stylesheet">
 <style>
@@ -420,8 +418,20 @@
   }
   // 在畫面第一次被觸碰/點擊時就嘗試解鎖音效，確保之後由 setTimeout 觸發的地鼠聲音也能正常播放
   ['pointerdown','touchstart','click'].forEach(evt=>{
-    document.addEventListener(evt, function unlock(){ getCtx(); }, {once:true});
+    document.addEventListener(evt, function unlock(){ getCtx(); primeSpeech(); }, {once:true});
   });
+
+  // Android Chrome 有個常見 bug：頁面載入後「第一次」呼叫 speechSynthesis.speak() 常常會被吃掉、完全沒聲音，
+  // 但之後的呼叫就正常。這裡先送一個幾乎無聲的暖身語音，把這個 bug 消耗掉，讓之後真正的題目語音可以正常播放。
+  function primeSpeech(){
+    if(!('speechSynthesis' in window)) return;
+    try{
+      const u = new SpeechSynthesisUtterance('　');
+      u.volume = 0;
+      u.lang = 'zh-TW';
+      window.speechSynthesis.speak(u);
+    }catch(e){}
+  }
 
   /* ---------------------------------------------------------------- */
   /* 音效合成                                                          */

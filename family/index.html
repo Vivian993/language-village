@@ -237,6 +237,7 @@
 
   /* ---------- SONG MODE ---------- */
   #screen-song{background:linear-gradient(#F3E9EF,#E6D5E3);}
+  .song-scroll{flex:1; min-height:0; overflow-y:auto; display:flex; flex-direction:column;}
   .song-picker{
     display:flex; gap:12px; justify-content:center; flex-wrap:wrap;
     padding: 10px clamp(14px,4vw,26px) 4px;
@@ -256,20 +257,20 @@
   .song-play-btn{
     display:block; margin:4px auto 10px; border:none; border-radius:999px;
     background:var(--clay); color:#fff; font-weight:700; font-size:clamp(16px,3.6vw,22px);
-    padding:12px 32px; cursor:pointer; box-shadow:var(--shadow); font-family:inherit;
+    padding:12px 32px; cursor:pointer; box-shadow:var(--shadow); font-family:inherit; flex-shrink:0;
   }
   .song-play-btn:active{transform:translateY(4px); box-shadow:none;}
   .instrument-title{
     text-align:center; font-size:clamp(14px,3vw,18px); font-weight:700; color:var(--ink); opacity:0.75;
-    padding:6px 0;
+    padding:6px 0; flex-shrink:0;
   }
   .instrument-grid{
-    flex:1; min-height:0; overflow-y:auto;
-    display:grid; grid-template-columns:repeat(3, 1fr); gap:14px;
-    padding:6px clamp(16px,4vw,30px) 26px;
+    display:grid; grid-template-columns:repeat(auto-fill, minmax(100px,1fr)); gap:14px;
+    padding:6px clamp(16px,4vw,30px) 30px; width:100%;
   }
   .instrument-btn{
-    border:none; border-radius:26px; aspect-ratio:1/1; cursor:pointer; box-shadow:var(--shadow);
+    border:none; border-radius:26px; aspect-ratio:1/1; max-width:170px; margin:0 auto; width:100%;
+    cursor:pointer; box-shadow:var(--shadow);
     display:flex; flex-direction:column; align-items:center; justify-content:center; gap:6px;
     font-family:inherit; font-size:clamp(13px,2.8vw,16px); font-weight:700; color:#fff;
   }
@@ -370,11 +371,13 @@
       <div class="top-title">🎵 聽兒歌 + 玩樂器</div>
       <button class="mute-btn" id="muteSong">🔊</button>
     </div>
-    <div class="song-picker" id="songPicker"></div>
-    <div class="song-status" id="songStatus">選一首歌，按下播放吧！</div>
-    <button class="song-play-btn" id="songPlayBtn">▶️ 播放</button>
-    <div class="instrument-title">🥁 一起敲敲打打伴奏吧！</div>
-    <div class="instrument-grid" id="instrumentGrid"></div>
+    <div class="song-scroll">
+      <div class="song-picker" id="songPicker"></div>
+      <div class="song-status" id="songStatus">選一首歌，按下播放吧！</div>
+      <button class="song-play-btn" id="songPlayBtn">▶️ 播放</button>
+      <div class="instrument-title">🥁 一起敲敲打打伴奏吧！</div>
+      <div class="instrument-grid" id="instrumentGrid"></div>
+    </div>
   </div>
 
 </div>
@@ -641,6 +644,17 @@ function getCtx(){
   if(!audioCtx) audioCtx = new (window.AudioContext||window.webkitAudioContext)();
   if(audioCtx.state==='suspended') audioCtx.resume();
   return audioCtx;
+}
+function unlockAudio(){
+  const ctx = getCtx();
+  if(ctx.state==='suspended') ctx.resume();
+  try{
+    const buffer = ctx.createBuffer(1, 1, 22050);
+    const src = ctx.createBufferSource();
+    src.buffer = buffer;
+    src.connect(ctx.destination);
+    src.start(0);
+  }catch(e){}
 }
 // 通用頭像渲染：有照片就顯示照片，沒照片但有 emoji/大文字就顯示 emoji，都沒有就顯示預設人形圖示
 function avatarInnerHTML(person, posStyleOverride){
@@ -1098,6 +1112,7 @@ const INSTRUMENTS = [
 function playInstrument(type){
   if(muted) return;
   try{
+    unlockAudio();
     const ctx = getCtx();
     const t0 = ctx.currentTime;
     if(type === 'drum'){
@@ -1187,7 +1202,7 @@ renderSongPicker();
 renderInstruments();
 
 document.getElementById('btnGoSong').addEventListener('click', ()=>{
-  getCtx();
+  unlockAudio();
   showScreen('screen-song');
 });
 document.getElementById('btnBackSong').addEventListener('click', ()=>{

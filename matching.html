@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>歡樂打地鼠 - 莫蘭迪色系學習版</title>
+
+  <!-- 📌 iPhone 桌面 App 圖示：它會去抓您上傳到 GitHub 的 custom-icon.png 照片 -->
+  <link rel="apple-touch-icon" href="custom-icon.png">
+  <link rel="icon" type="image/png" href="custom-icon.png">
+
+  <!-- 載入 Tailwind CSS 來處理排版與樣式 -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- 設定莫蘭迪色系與自訂樣式 -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            morandi: {
+              bg: '#F3EFE8',      // 暖米白 (背景)
+              hole: '#BCAFA4',    // 奶茶灰 (地洞)
+              text: '#6B625B',    // 深咖灰 (文字)
+              red: '#D49B95',     // 豆沙紅
+              blue: '#9CB3C2',    // 灰霧藍
+              green: '#A8B7A2',   // 抹茶灰
+              yellow: '#DDC597',  // 麥穗黃
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <style>
+    /* 防止在手機上點擊時出現藍色高光與選取文字 */
+    body {
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+    .hole-mask {
+      clip-path: inset(-20% 0 0 0); /* 讓地鼠看起來是從洞裡鑽出來的 */
+    }
+  </style>
+</head>
+<body class="bg-morandi-bg text-morandi-text min-h-screen w-full flex flex-col font-sans overflow-hidden">
+
+  <!-- 主選單畫面 -->
+  <div id="menuView" class="flex-1 flex flex-col items-center justify-center p-4 md:p-8 w-full max-w-4xl mx-auto">
+    <h1 class="text-4xl md:text-6xl font-black text-center mb-8 md:mb-12 tracking-wider drop-shadow-sm">
+      🌟 歡樂打地鼠 🌟
+    </h1>
+    <p class="text-center text-xl md:text-2xl mb-8 font-medium">
+      請選擇一個喜歡的遊戲關卡！
+    </p>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 w-full">
+      <button onclick="startGame('colors')" class="bg-morandi-red transform transition-transform active:scale-95 hover:scale-105 rounded-[40px] p-8 md:p-12 shadow-lg flex flex-col items-center justify-center gap-4">
+        <h2 class="text-4xl md:text-5xl font-bold text-white drop-shadow-sm">認顏色</h2>
+      </button>
+      <button onclick="startGame('shapes')" class="bg-morandi-blue transform transition-transform active:scale-95 hover:scale-105 rounded-[40px] p-8 md:p-12 shadow-lg flex flex-col items-center justify-center gap-4">
+        <h2 class="text-4xl md:text-5xl font-bold text-white drop-shadow-sm">認形狀</h2>
+      </button>
+      <button onclick="startGame('numbers')" class="bg-morandi-green transform transition-transform active:scale-95 hover:scale-105 rounded-[40px] p-8 md:p-12 shadow-lg flex flex-col items-center justify-center gap-4">
+        <h2 class="text-4xl md:text-5xl font-bold text-white drop-shadow-sm">數字1-10</h2>
+      </button>
+      <button onclick="startGame('festivals')" class="bg-morandi-yellow transform transition-transform active:scale-95 hover:scale-105 rounded-[40px] p-8 md:p-12 shadow-lg flex flex-col items-center justify-center gap-4">
+        <h2 class="text-4xl md:text-5xl font-bold text-white drop-shadow-sm">節日聯想</h2>
+      </button>
+    </div>
+  </div>
+
+  <!-- 遊戲畫面 -->
+  <div id="gameView" class="hidden flex-col h-screen w-full">
+    
+    <!-- 頂部資訊列 -->
+    <div class="w-full p-4 md:p-6 flex items-center justify-between shadow-sm bg-white/40 backdrop-blur-sm z-10 rounded-b-3xl">
+      <button onclick="stopGame()" class="text-xl md:text-2xl font-bold px-6 py-3 rounded-full bg-white shadow-md active:scale-95 transition-transform text-morandi-text">
+        返回選單
+      </button>
+      <div id="scoreDisplay" class="text-3xl md:text-5xl font-black tracking-wide">
+        得分: 0
+      </div>
+    </div>
+
+    <!-- 目標提示區塊 -->
+    <div class="flex-none flex flex-col items-center justify-center p-4 mt-2">
+      <h3 class="text-2xl md:text-4xl font-bold mb-4 flex items-center flex-wrap justify-center gap-2">
+        <span id="promptTextPrefix">請打：</span>
+        <span id="targetNameDisplay" class="text-4xl md:text-6xl mx-2 drop-shadow-sm"></span>
+      </h3>
+      <button onclick="replaySpeech()" class="px-6 py-2 rounded-full bg-white/60 shadow-sm font-bold text-lg hover:bg-white active:scale-95 text-morandi-text border border-gray-200">
+        🔊 再聽一次
+      </button>
+    </div>
+
+    <!-- 遊戲網格 -->
+    <div class="flex-1 w-full max-w-6xl mx-auto p-4 flex items-center justify-center mb-8">
+      <div class="w-full grid grid-cols-2 md:grid-cols-3 gap-x-4 gap-y-12 md:gap-x-12 md:gap-y-16" id="holesGrid">
+        <!-- 地洞由 JS 動態生成 -->
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript 邏輯 -->
+  <script>
+    // --- 遊戲資料庫 (HTML 字串格式) ---
+    const CATEGORIES = {
+      colors: {
+        id: 'colors',
+        title: '認顏色',
+        colorClass: 'text-morandi-red',
+        items: [
+          { id: 'red', name: '紅色', html: '<div class="w-32 h-32 md:w-40 md:h-40 rounded-full" style="background-color: #C56A63"></div>' },
+          { id: 'blue', name: '藍色', html: '<div class="w-32 h-32 md:w-40 md:h-40 rounded-full" style="background-color: #6A8BA4"></div>' },
+          { id: 'yellow', name: '黃色', html: '<div class="w-32 h-32 md:w-40 md:h-40 rounded-full" style="background-color: #D1B464"></div>' },
+          { id: 'green', name: '綠色', html: '<div class="w-32 h-32 md:w-40 md:h-40 rounded-full" style="background-color: #829B72"></div>' },
+        ]
+      },
+      shapes: {
+        id: 'shapes',
+        title: '認形狀',
+        colorClass: 'text-morandi-blue',
+        items: [
+          { id: 'circle', name: '圓形', html: '<div class="w-32 h-32 md:w-40 md:h-40 rounded-full" style="background-color: #958C96"></div>' },
+          { id: 'square', name: '正方形', html: '<div class="w-32 h-32 md:w-40 md:h-40" style="background-color: #958C96"></div>' },
+          { id: 'triangle', name: '三角形', html: '<div class="w-0 h-0 border-l-[60px] border-l-transparent border-r-[60px] border-r-transparent border-b-[100px]" style="border-bottom-color: #958C96"></div>' },
+          { id: 'star', name: '星星', html: '<div class="text-8xl md:text-9xl drop-shadow-md">⭐</div>' },
+        ]
+      },
+      numbers: {
+        id: 'numbers',
+        title: '數字1-10',
+        colorClass: 'text-morandi-green',
+        items: Array.from({length: 10}, (_, i) => ({
+          id: `num_${i+1}`, 
+          name: `數字 ${i+1}`, 
+          html: `<div class="w-32 h-32 md:w-40 md:h-40 flex items-center justify-center rounded-3xl bg-white/70 shadow-sm border-4 border-morandi-text text-morandi-text"><span class="text-7xl md:text-8xl font-black">${i+1}</span></div>`
+        }))
+      },
+      festivals: {
+        id: 'festivals',
+        title: '節日聯想',
+        colorClass: 'text-morandi-yellow',
+        items: [
+          { 
+            id: 'zongzi', name: '端午節的粽子', promptText: '端午節', 
+            html: `
+              <div class="w-28 h-28 md:w-36 md:h-36 drop-shadow-lg flex items-center justify-center">
+                <svg viewBox="0 0 100 100" class="w-full h-full">
+                  <path d="M 50 10 L 90 85 L 10 85 Z" fill="#8EAE6C" stroke="#688B4C" stroke-width="4" stroke-linejoin="round"/>
+                  <path d="M 32 50 L 68 50 M 20 70 L 80 70 M 50 10 L 50 85" stroke="#D1B98D" stroke-width="5" fill="none" stroke-linecap="round"/>
+                  <circle cx="38" cy="65" r="4" fill="#4A4A4A" />
+                  <circle cx="62" cy="65" r="4" fill="#4A4A4A" />
+                  <path d="M 46 72 Q 50 77 54 72" stroke="#4A4A4A" stroke-width="3" fill="none" stroke-linecap="round"/>
+                  <circle cx="28" cy="68" r="4" fill="#FFB6C1" opacity="0.8" />
+                  <circle cx="72" cy="68" r="4" fill="#FFB6C1" opacity="0.8" />
+                </svg>
+              </div>`
+          }, 
+          { id: 'firecracker', name: '過年的鞭炮', promptText: '過年', html: '<div class="text-8xl md:text-9xl drop-shadow-lg">🧨</div>' },
+          { id: 'mooncake', name: '中秋節的月餅', promptText: '中秋節', html: '<div class="text-8xl md:text-9xl drop-shadow-lg">🥮</div>' },
+          { id: 'pumpkin', name: '萬聖節的南瓜', promptText: '萬聖節', html: '<div class="text-8xl md:text-9xl drop-shadow-lg">🎃</div>' },
+          { id: 'tree', name: '聖誕節的聖誕樹', promptText: '聖誕節', html: '<div class="text-8xl md:text-9xl drop-shadow-lg">🎄</div>' },
+          { id: 'lantern', name: '元宵節的燈籠', promptText: '元宵節', html: '<div class="text-8xl md:text-9xl drop-shadow-lg">🏮</div>' },
+          { id: 'cake', name: '生日的蛋糕', promptText: '生日', html: '<div class="text-8xl md:text-9xl drop-shadow-lg">🎂</div>' },
+          { id: 'balloon', name: '兒童節的氣球', promptText: '兒童節', html: '<div class="text-8xl md:text-9xl drop-shadow-lg">🎈</div>' },
+          { id: 'flower', name: '母親節的花朵', promptText: '母親節', html: '<div class="text-8xl md:text-9xl drop-shadow-lg">💐</div>' },
+          { id: 'turkey', name: '感恩節的火雞', promptText: '感恩節', html: '<div class="text-8xl md:text-9xl drop-shadow-lg">🦃</div>' },
+          { id: 'fireworks', name: '跨年的煙火', promptText: '跨年', html: '<div class="text-8xl md:text-9xl drop-shadow-lg">🎆</div>' },
+          { id: 'chocolate', name: '情人節的巧克力', promptText: '情人節', html: '<div class="text-8xl md:text-9xl drop-shadow-lg">🍫</div>' },
+        ]
+      }
+    };
+
+    // --- 全域變數 ---
+    let currentCategory = null;
+    let score = 0;
+    let currentTarget = null;
+    let gameInterval = null;
+    let audioCtx = null;
+    let currentHolesState = Array(6).fill(null);
+
+    // DOM 元素
+    const menuView = document.getElementById('menuView');
+    const gameView = document.getElementById('gameView');
+    const scoreDisplay = document.getElementById('scoreDisplay');
+    const promptTextPrefix = document.getElementById('promptTextPrefix');
+    const targetNameDisplay = document.getElementById('targetNameDisplay');
+    const holesGrid = document.getElementById('holesGrid');
+
+    // 初始化建構 6 個地洞 DOM
+    function initHolesDOM() {
+      holesGrid.innerHTML = '';
+      for (let i = 0; i < 6; i++) {
+        const holeWrapper = document.createElement('div');
+        holeWrapper.className = 'relative w-full aspect-square flex flex-col items-center justify-end';
+        
+        holeWrapper.innerHTML = `
+          <!-- 遮罩容器 -->
+          <div class="absolute inset-0 w-full h-[120%] -top-[20%] overflow-hidden flex items-end justify-center z-10 pointer-events-none hole-mask">
+            <!-- 動態移動的地鼠物件 -->
+            <div id="item-container-${i}" 
+                 class="transition-transform duration-300 ease-out flex items-center justify-center cursor-pointer pointer-events-auto translate-y-full opacity-0"
+                 style="padding-bottom: 30px; transform-origin: bottom center;"
+                 onclick="handleWhack(${i})">
+            </div>
+          </div>
+          <!-- 地洞底圖 -->
+          <div class="w-[80%] h-[30%] md:h-[40%] rounded-[100%] shadow-inner absolute bottom-0 z-0 bg-morandi-hole border-t-4 border-black/10"></div>
+        `;
+        holesGrid.appendChild(holeWrapper);
+      }
+    }
+
+    // --- 語音系統 ---
+    function speak(text) {
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel(); 
+        const msg = new SpeechSynthesisUtterance(text);
+        msg.lang = 'zh-TW';
+        msg.rate = 0.85; 
+        msg.pitch = 1.2; 
+        window.speechSynthesis.speak(msg);
+      }
+    }
+
+    function replaySpeech() {
+      if (!currentTarget) return;
+      const promptWord = currentTarget.promptText ? currentTarget.promptText : currentTarget.name;
+      const speechText = currentTarget.promptText 
+        ? `請打出 ${promptWord} 的東西！`
+        : `請打 ${promptWord}`;
+      speak(speechText);
+    }
+
+    // --- 音效系統 ---
+    function playSound(type) {
+      if (!audioCtx) {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return; // 不支援音效
+        audioCtx = new AudioContext();
+      }
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+
+      const osc = audioCtx.createOscillator();
+      const gainNode = audioCtx.createGain();
+      osc.connect(gainNode);
+      gainNode.connect(audioCtx.destination);
+      const now = audioCtx.currentTime;
+
+      if (type === 'colors') {
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(1046.50, now);
+        gainNode.gain.setValueAtTime(0.5, now);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.4);
+        osc.start(now);
+        osc.stop(now + 0.4);
+      } else if (type === 'shapes') {
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(400, now);
+        osc.frequency.exponentialRampToValueAtTime(50, now + 0.15);
+        gainNode.gain.setValueAtTime(0.4, now);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.15);
+        osc.start(now);
+        osc.stop(now + 0.15);
+      } else if (type === 'numbers') {
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(150, now);
+        osc.frequency.linearRampToValueAtTime(800, now + 0.2);
+        gainNode.gain.setValueAtTime(0.5, now);
+        gainNode.gain.linearRampToValueAtTime(0.01, now + 0.3);
+        osc.start(now);
+        osc.stop(now + 0.3);
+      } else if (type === 'festivals') {
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(600, now);
+        osc.frequency.linearRampToValueAtTime(1200, now + 0.1);
+        osc.frequency.linearRampToValueAtTime(500, now + 0.25);
+        gainNode.gain.setValueAtTime(0.3, now);
+        gainNode.gain.linearRampToValueAtTime(0.01, now + 0.25);
+        osc.start(now);
+        osc.stop(now + 0.25);
+      } else if (type === 'wrong') {
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(150, now);
+        gainNode.gain.setValueAtTime(0.4, now);
+        gainNode.gain.linearRampToValueAtTime(0.01, now + 0.3);
+        osc.start(now);
+        osc.stop(now + 0.3);
+      }
+    }
+
+    // --- 遊戲邏輯 ---
+    function pickNewTarget() {
+      const items = CATEGORIES[currentCategory].items;
+      currentTarget = items[Math.floor(Math.random() * items.length)];
+      
+      // 更新 UI
+      if (currentTarget.promptText) {
+        promptTextPrefix.innerText = `請找出「${currentTarget.promptText}」的東西：`;
+      } else {
+        promptTextPrefix.innerText = '請打：';
+      }
+      targetNameDisplay.innerText = currentTarget.name;
+      
+      replaySpeech();
+    }
+
+    function startGame(categoryId) {
+      currentCategory = categoryId;
+      score = 0;
+      scoreDisplay.innerText = `得分: ${score}`;
+      
+      // 設定分數的顏色
+      scoreDisplay.className = `text-3xl md:text-5xl font-black tracking-wide ${CATEGORIES[categoryId].colorClass}`;
+      targetNameDisplay.className = `text-4xl md:text-6xl mx-2 drop-shadow-sm ${CATEGORIES[categoryId].colorClass}`;
+
+      // 切換畫面
+      menuView.classList.add('hidden');
+      menuView.classList.remove('flex');
+      gameView.classList.add('flex');
+      gameView.classList.remove('hidden');
+
+      initHolesDOM();
+      
+      // 需要啟動 AudioContext (瀏覽器限制，需要使用者互動後啟動)
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+
+      pickNewTarget();
+      startSpawnLoop();
+    }
+
+    function stopGame() {
+      if (gameInterval) clearInterval(gameInterval);
+      if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+      
+      currentCategory = null;
+      currentTarget = null;
+      
+      // 隱藏所有地鼠
+      for(let i=0; i<6; i++) {
+        hideHoleItem(i);
+      }
+      
+      // 切換畫面
+      gameView.classList.add('hidden');
+      gameView.classList.remove('flex');
+      menuView.classList.add('flex');
+      menuView.classList.remove('hidden');
+    }
+
+    function startSpawnLoop() {
+      if (gameInterval) clearInterval(gameInterval);
+
+      gameInterval = setInterval(() => {
+        // 先決定要出現的地鼠數量 (1~3個)
+        const numToSpawn = Math.floor(Math.random() * 3) + 1;
+        let availableIndices = [0, 1, 2, 3, 4, 5];
+        const items = CATEGORIES[currentCategory].items;
+        
+        let newHolesState = Array(6).fill(null);
+
+        for (let i = 0; i < numToSpawn; i++) {
+          const randomIndex = Math.floor(Math.random() * availableIndices.length);
+          const holeIndex = availableIndices.splice(randomIndex, 1)[0];
+          
+          // 第一個出現的有機率是正確目標
+          let itemToSpawn;
+          if (i === 0 && Math.random() > 0.2 && currentTarget) {
+            itemToSpawn = currentTarget;
+          } else {
+            itemToSpawn = items[Math.floor(Math.random() * items.length)];
+          }
+          newHolesState[holeIndex] = itemToSpawn;
+        }
+
+        // 更新畫面上的地鼠
+        for (let i = 0; i < 6; i++) {
+          currentHolesState[i] = newHolesState[i];
+          const container = document.getElementById(`item-container-${i}`);
+          
+          if (newHolesState[i]) {
+            // 換上新圖案，並讓它冒出來
+            container.innerHTML = newHolesState[i].html;
+            container.classList.remove('translate-y-full', 'opacity-0');
+            container.classList.add('translate-y-0', 'opacity-100');
+          } else {
+            // 縮回去
+            hideHoleItem(i);
+          }
+        }
+      }, 1500); // 每 1.5 秒換一波
+    }
+
+    function hideHoleItem(index) {
+       const container = document.getElementById(`item-container-${index}`);
+       container.classList.remove('translate-y-0', 'opacity-100');
+       container.classList.add('translate-y-full', 'opacity-0');
+       currentHolesState[index] = null;
+    }
+
+    function handleWhack(index) {
+      const item = currentHolesState[index];
+      if (!item || !currentTarget) return;
+
+      if (item.id === currentTarget.id) {
+        // 打對了！
+        playSound(currentCategory);
+        score += 1;
+        scoreDisplay.innerText = `得分: ${score}`;
+        
+        // 把打中的地鼠縮回去
+        hideHoleItem(index);
+
+        // 延遲出下一個題目
+        setTimeout(() => {
+          pickNewTarget();
+        }, 500);
+      } else {
+        // 打錯了
+        playSound('wrong');
+      }
+    }
+
+    // 預先載入地洞 (避免剛開始時沒畫面)
+    initHolesDOM();
+  </script>
+</body>
+</html>
+
